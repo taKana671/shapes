@@ -1,13 +1,21 @@
+import abc
+
 from panda3d.core import NodePath
 from panda3d.core import Geom, GeomNode, GeomTriangles
 from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexArrayFormat
 
 
-class ProcedualGeometry(NodePath):
+class ProceduralGeometry(abc.ABC):
 
-    def __init__(self, geom_node):
-        super().__init__(geom_node)
-        self.set_two_sided(True)
+    @abc.abstractmethod
+    def get_geom_node(self):
+        pass
+
+    def create(self):
+        geom_node = self.get_geom_node()
+        model = NodePath(geom_node)
+        model.set_two_sided(True)
+        return model
 
     def create_format(self):
         arr_format = GeomVertexArrayFormat()
