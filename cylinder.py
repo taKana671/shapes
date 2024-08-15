@@ -1,7 +1,7 @@
 import array
 import math
 
-from panda3d.core import Vec3, Point3, Vec2
+from panda3d.core import Vec3, Point3, Vec2, Mat4
 
 from .create_geometry import ProceduralGeometry
 
@@ -9,15 +9,20 @@ from .create_geometry import ProceduralGeometry
 class CylinderModel(ProceduralGeometry):
     """Create a cylinder model.
        Args:
-            radius (float): the radius of the cylinder; must be more than zero;
-            segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3;
-            height (float): length of the cylinder;
-            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1;
-            segs_cap (int)
+            radius (float): the radius of the cylinder; must be more than zero
+            inner_radius (float): the radius of the inner cylinder; must be less than radius or equal
+            height (float): length of the cylinder
+            segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3
+            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1
+            segs_cap (int): radial subdivisions of the bottom cap; minimum = 0
+            slice_angle_deg (int): the angle of the pie slice removed from the cylinder, in degrees; must be from 0 to 360
+            slice_caps_radial (int): subdivisions of both slice caps, along the radius; minimum = 0
+            slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; minimum=0
     """
 
-    def __init__(self, radius=10, inner_radius=4, height=1, segs_c=40, segs_a=2, segs_cap=3,
-                 slice_angle_deg=0, slice_caps_radial=1, slice_caps_axial=1):
+    def __init__(self, radius=10, inner_radius=0, height=1, segs_c=40, segs_a=2, segs_cap=3,
+                 slice_angle_deg=0, slice_caps_radial=1, slice_caps_axial=1, invert_inner_mantle=True):
+        super().__init__()
         self.radius = radius
         self.inner_radius = inner_radius
         self.height = height
@@ -27,6 +32,7 @@ class CylinderModel(ProceduralGeometry):
         self.slice_deg = slice_angle_deg
         self.segs_sc_r = slice_caps_radial
         self.segs_sc_a = slice_caps_axial
+        self.invert_inner_mantle = invert_inner_mantle
         self.color = (1, 1, 1, 1)
 
     def create_cap_triangles(self, vdata_values, bottom=True):
@@ -114,7 +120,9 @@ class CylinderModel(ProceduralGeometry):
 
         return vertex_cnt
 
-    def create_mantle_quads(self, index_offset, vdata_values, prim_indices, invert=False):
+    # def create_mantle_quads(self, index_offset, vdata_values, prim_indices, invert=False):
+    def create_mantle_quads(self, index_offset, vdata_values, prim_indices, outer=True, invert=False):
+        radius = self.radius if outer else self.inner_radius
         vertex_cnt = 0
 
         # mantle quad vertices
@@ -124,8 +132,8 @@ class CylinderModel(ProceduralGeometry):
 
             for j in range(self.segs_c + 1):
                 angle = self.delta_rad * j + (0 if invert else self.slice_rad)
-                x = self.radius * math.cos(angle)
-                y = self.radius * math.sin(angle) * (-1 if invert else 1)
+                x = radius * math.cos(angle)
+                y = radius * math.sin(angle) * (-1 if invert else 1)
                 vertex = Point3(x, y, z)
 
                 normal = Vec3(x, y, 0.0).normalized() * (-1 if invert else 1)
@@ -144,7 +152,7 @@ class CylinderModel(ProceduralGeometry):
                 vi2 = vi1 - n
                 vi3 = vi2 + 1
                 vi4 = vi1 + 1
-
+                # prim_indices.extend([*(vi1, vi2, vi3), *(vi1, vi3, vi4)])
                 prim_indices.extend((vi1, vi2, vi4) if invert else (vi1, vi2, vi3))
                 prim_indices.extend((vi2, vi3, vi4) if invert else (vi1, vi3, vi4))
 
@@ -240,12 +248,6 @@ class CylinderModel(ProceduralGeometry):
             vertex_cnt += self.create_slice_cap_quads(vertex_cnt, vdata_values, prim_indices)
         return vertex_cnt
 
-    def create_inner_cylinder(self, vdata_values, prim_indices):
-        self.radius = self.inner_radius
-        vertex_cnt = 0
-        vertex_cnt += self.create_mantle_quads(vertex_cnt, vdata_values, prim_indices, invert=True)
-        return vertex_cnt
-
     def check_variables(self):
         if self.radius <= 0:
             raise ValueError('Radius must be greater than 0.')
@@ -264,31 +266,17 @@ class CylinderModel(ProceduralGeometry):
         prim_indices = array.array('H', [])
         vertex_cnt = self.create_outer_cylinder(vdata_values, prim_indices)
 
-        fmt = self.create_format()
-        nd = self.create_geom_node(fmt, vertex_cnt, vdata_values, prim_indices, 'cylinder_h')
+        geom_node = self.create_geom_node(
+            vertex_cnt, vdata_values, prim_indices, 'cylinder')
 
         if 0 < self.inner_radius < self.radius:
-            # create inner cylinder
+            # create the mantle of inner cylinder
             vdata_values = array.array('f', [])
             prim_indices = array.array('H', [])
-            vertex_cnt = self.create_inner_cylinder(vdata_values, prim_indices)
+            vertex_cnt = self.create_mantle_quads(
+                0, vdata_values, prim_indices, outer=False, invert=self.invert_inner_mantle)
 
-            # join outer and inner cylinders
-            geom = nd.modify_geom(0)
-            vdata = geom.modify_vertex_data()
-            old_vert_cnt = vdata.get_num_rows()
-            old_vert_size = old_vert_cnt * 12
-            vdata.set_num_rows(old_vert_cnt + vertex_cnt)
-            vdata_mem = memoryview(vdata.modify_array(0)).cast('B').cast('f')
-            vdata_mem[old_vert_size:] = vdata_values
+            # connect inner cylinder to outer cylinders
+            self.add(geom_node, vdata_values, vertex_cnt, prim_indices, len(prim_indices))
 
-            prim = geom.modify_primitive(0)
-            old_prim_cnt = prim.get_num_vertices()
-            new_prim_cnt = old_prim_cnt + len(prim_indices)
-            prim_array = prim.modify_vertices()
-            prim_array.set_num_rows(new_prim_cnt)
-            prim_mem = memoryview(prim_array).cast('B').cast('H')
-            prim_mem[old_prim_cnt:] = prim_indices
-            prim.offset_vertices(old_vert_cnt, old_prim_cnt, new_prim_cnt)
-
-        return nd
+        return geom_node

@@ -16,6 +16,7 @@ class PlaneModel(ProceduralGeometry):
     """
 
     def __init__(self, w=256, d=256, segs_w=16, segs_d=16):
+        super().__init__()
         self.w = w
         self.d = d
         self.segs_w = segs_w
@@ -53,6 +54,7 @@ class PlaneModel(ProceduralGeometry):
                     prim_indices.extend((idx, idx - self.segs_d, idx + 1))
 
         vertex_cnt = (self.segs_w + 1) * (self.segs_d + 1)
-        fmt = self.create_format()
-        nd = self.create_geom_node(fmt, vertex_cnt, vdata_values, prim_indices, 'plane')
-        return nd
+        geom_node = self.create_geom_node(
+            vertex_cnt, vdata_values, prim_indices, 'plane')
+
+        return geom_node
