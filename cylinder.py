@@ -1,7 +1,7 @@
 import array
 import math
 
-from panda3d.core import Vec3, Point3, Vec2, Mat4
+from panda3d.core import Vec3, Point3, Vec2
 
 from .create_geometry import ProceduralGeometry
 

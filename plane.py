@@ -9,16 +9,16 @@ from .create_geometry import ProceduralGeometry
 class PlaneModel(ProceduralGeometry):
     """Create a plane geom node.
         Arges:
-            w (int): width; dimension along the x-axis; cannot be negative
-            d (int): depth; dimension along the y-axis; cannot be negative
-            segs_w (int) the number of subdivisions in width
-            segs_d (int) the number of subdivisions in depth
+            width (int): dimension along the x-axis; more than zero
+            depth (int): dimension along the y-axis; more than zero
+            segs_w (int) the number of subdivisions in width; positive integer
+            segs_d (int) the number of subdivisions in depth; positive integer
     """
 
-    def __init__(self, w=256, d=256, segs_w=16, segs_d=16):
+    def __init__(self, width=256, depth=256, segs_w=16, segs_d=16):
         super().__init__()
-        self.w = w
-        self.d = d
+        self.width = width
+        self.depth = depth
         self.segs_w = segs_w
         self.segs_d = segs_d
 
@@ -26,8 +26,8 @@ class PlaneModel(ProceduralGeometry):
         vdata_values = array.array('f', [])
         prim_indices = array.array('H', [])
 
-        start_w = self.w * -0.5
-        start_d = self.d * -0.5
+        start_w = self.width * -0.5
+        start_d = self.depth * -0.5
         offset_u = -start_w
         offset_v = -start_d
 
@@ -35,12 +35,12 @@ class PlaneModel(ProceduralGeometry):
         normal = Vec3(0, 0, 1)
 
         for i in range(self.segs_w + 1):
-            x = start_w + i / self.segs_w * self.w
-            u = (x + offset_u) / self.w
+            x = start_w + i / self.segs_w * self.width
+            u = (x + offset_u) / self.width
 
             for j in range(self.segs_d + 1):
-                y = start_d + j / self.segs_d * self.d
-                v = (y + offset_v) / self.d
+                y = start_d + j / self.segs_d * self.depth
+                v = (y + offset_v) / self.depth
 
                 vdata_values.extend(Point3(x, y, 0))
                 vdata_values.extend(color)
