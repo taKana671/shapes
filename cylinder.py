@@ -21,7 +21,7 @@ class CylinderModel(ProceduralGeometry):
     """
 
     def __init__(self, radius=10, inner_radius=0, height=1, segs_c=40, segs_a=2, segs_cap=3,
-                 slice_angle_deg=0, slice_caps_radial=1, slice_caps_axial=1, invert_inner_mantle=True):
+                 slice_angle_deg=0, slice_caps_radial=1, slice_caps_axial=1, invert=False):
         super().__init__()
         self.radius = radius
         self.inner_radius = inner_radius
@@ -32,7 +32,7 @@ class CylinderModel(ProceduralGeometry):
         self.slice_deg = slice_angle_deg
         self.segs_sc_r = slice_caps_radial
         self.segs_sc_a = slice_caps_axial
-        self.invert_inner_mantle = invert_inner_mantle
+        self.invert = invert
         self.color = (1, 1, 1, 1)
 
     def create_cap_triangles(self, vdata_values, bottom=True):
@@ -120,8 +120,7 @@ class CylinderModel(ProceduralGeometry):
 
         return vertex_cnt
 
-    # def create_mantle_quads(self, index_offset, vdata_values, prim_indices, invert=False):
-    def create_mantle_quads(self, index_offset, vdata_values, prim_indices, outer=True, invert=False):
+    def create_mantle_quads(self, index_offset, vdata_values, prim_indices, invert, outer=True):
         radius = self.radius if outer else self.inner_radius
         vertex_cnt = 0
 
@@ -152,7 +151,7 @@ class CylinderModel(ProceduralGeometry):
                 vi2 = vi1 - n
                 vi3 = vi2 + 1
                 vi4 = vi1 + 1
-                # prim_indices.extend([*(vi1, vi2, vi3), *(vi1, vi3, vi4)])
+
                 prim_indices.extend((vi1, vi2, vi4) if invert else (vi1, vi2, vi3))
                 prim_indices.extend((vi2, vi3, vi4) if invert else (vi1, vi3, vi4))
 
@@ -239,7 +238,7 @@ class CylinderModel(ProceduralGeometry):
         vertex_cnt = 0
         vertex_cnt += self.create_bottom_cap_triangles(vdata_values, prim_indices)
         vertex_cnt += self.create_bottom_cap_quads(vdata_values, prim_indices)
-        vertex_cnt += self.create_mantle_quads(vertex_cnt, vdata_values, prim_indices)
+        vertex_cnt += self.create_mantle_quads(vertex_cnt, vdata_values, prim_indices, self.invert)
         sub_total = vertex_cnt
         vertex_cnt += self.create_top_cap_triangles(sub_total, vdata_values, prim_indices)
         vertex_cnt += self.create_top_cap_quads(sub_total, vdata_values, prim_indices)
@@ -266,15 +265,18 @@ class CylinderModel(ProceduralGeometry):
         prim_indices = array.array('H', [])
         vertex_cnt = self.create_outer_cylinder(vdata_values, prim_indices)
 
+        if self.slice_deg > 0:
+            vertex_cnt += self.create_slice_cap_quads(vertex_cnt, vdata_values, prim_indices)
+
         geom_node = self.create_geom_node(
             vertex_cnt, vdata_values, prim_indices, 'cylinder')
 
+        # create the mantle of inner cylinder
         if 0 < self.inner_radius < self.radius:
-            # create the mantle of inner cylinder
             vdata_values = array.array('f', [])
             prim_indices = array.array('H', [])
             vertex_cnt = self.create_mantle_quads(
-                0, vdata_values, prim_indices, outer=False, invert=self.invert_inner_mantle)
+                0, vdata_values, prim_indices, not self.invert, outer=False)
 
             # connect inner cylinder to outer cylinders
             self.add(geom_node, vdata_values, vertex_cnt, prim_indices, len(prim_indices))
