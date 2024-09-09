@@ -6,7 +6,7 @@ from panda3d.core import Vec3, Point3, Vec2
 from .create_geometry import ProceduralGeometry
 
 
-class CylinderModel(ProceduralGeometry):
+class Cylinder(ProceduralGeometry):
     """Create a cylinder model.
        Args:
             radius (float): the radius of the cylinder; must be more than zero
@@ -20,7 +20,7 @@ class CylinderModel(ProceduralGeometry):
             slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; minimum=0
     """
 
-    def __init__(self, radius=10, inner_radius=0, height=1, segs_c=40, segs_a=2, segs_cap=3,
+    def __init__(self, radius=1.0, inner_radius=0, height=1.0, segs_c=40, segs_a=2, segs_cap=3,
                  slice_angle_deg=0, slice_caps_radial=1, slice_caps_axial=1, invert=False):
         super().__init__()
         self.radius = radius

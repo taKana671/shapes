@@ -6,7 +6,7 @@ from panda3d.core import Vec3
 from .create_geometry import ProceduralGeometry
 
 
-class PlaneModel(ProceduralGeometry):
+class Plane(ProceduralGeometry):
     """Create a plane geom node.
         Arges:
             width (int): dimension along the x-axis; more than zero

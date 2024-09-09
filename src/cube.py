@@ -5,7 +5,7 @@ from panda3d.core import Vec3, Point3
 from .create_geometry import ProceduralGeometry
 
 
-class CubeModel(ProceduralGeometry):
+class Cube(ProceduralGeometry):
     """Create a geom node of cube or cuboid.
         Arges:
             width (float): dimension along the x-axis; more than zero
