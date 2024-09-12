@@ -82,7 +82,7 @@ class ProceduralGeometry:
 
         vdata.transform_vertices(mat)
 
-    def add(self, geom_node, add_vdata, add_vert_cnt, add_prim, add_prim_cnt):
+    def add(self, geom_node, add_vdata, add_vert_cnt, add_prim):
         """Add geometry data to geom node.
             Args:
                 geom_node (GeomNode): geom node to which geometry data are added.
@@ -90,7 +90,7 @@ class ProceduralGeometry:
                 add_vdata (array.array or memoryview): vertices that will be added to the geom node.
                 add_vert_cnt (int): the number of vertex data rows that will be added to the geom node.
                 add_prim (array.array or memoryview): vertex order that will be added to the geom node.
-                add_prim_cnt (int): the number of primitives that will be added to the geom node.
+                # add_prim_cnt (int): the number of primitives that will be added to the geom node.
         """
         geom = geom_node.modify_geom(0)
         vdata = geom.modify_vertex_data()
@@ -102,7 +102,9 @@ class ProceduralGeometry:
 
         prim = geom.modify_primitive(0)
         old_prim_cnt = prim.get_num_vertices()
-        new_prim_cnt = old_prim_cnt + add_prim_cnt
+        new_prim_cnt = old_prim_cnt + len(add_prim)
+        # new_prim_cnt = old_prim_cnt + add_prim_cnt
+        
         prim_array = prim.modify_vertices()
         prim_array.set_num_rows(new_prim_cnt)
         prim_mem = memoryview(prim_array).cast('B').cast('H')

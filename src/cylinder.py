@@ -18,6 +18,7 @@ class Cylinder(ProceduralGeometry):
             slice_angle_deg (int): the angle of the pie slice removed from the cylinder, in degrees; must be from 0 to 360
             slice_caps_radial (int): subdivisions of both slice caps, along the radius; minimum = 0
             slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; minimum=0
+            invert (bool): whether or not the geometry should be rendered inside-out; default is False
     """
 
     def __init__(self, radius=1.0, inner_radius=0, height=1.0, segs_c=40, segs_a=2, segs_cap=3,
@@ -234,19 +235,6 @@ class Cylinder(ProceduralGeometry):
 
         return vertex_cnt
 
-    def create_outer_cylinder(self, vdata_values, prim_indices):
-        vertex_cnt = 0
-        vertex_cnt += self.create_bottom_cap_triangles(vdata_values, prim_indices)
-        vertex_cnt += self.create_bottom_cap_quads(vdata_values, prim_indices)
-        vertex_cnt += self.create_mantle_quads(vertex_cnt, vdata_values, prim_indices, self.invert)
-        sub_total = vertex_cnt
-        vertex_cnt += self.create_top_cap_triangles(sub_total, vdata_values, prim_indices)
-        vertex_cnt += self.create_top_cap_quads(sub_total, vdata_values, prim_indices)
-
-        if self.slice_deg > 0:
-            vertex_cnt += self.create_slice_cap_quads(vertex_cnt, vdata_values, prim_indices)
-        return vertex_cnt
-
     def check_variables(self):
         if self.radius <= 0:
             raise ValueError('Radius must be greater than 0.')
@@ -260,25 +248,33 @@ class Cylinder(ProceduralGeometry):
         self.slice_rad = math.pi * self.slice_deg / 180
         self.delta_rad = math.pi * ((360 - self.slice_deg) / 180) / self.segs_c
 
-        # create outer cylinder
+        # Create an outer cylinder.
         vdata_values = array.array('f', [])
         prim_indices = array.array('H', [])
-        vertex_cnt = self.create_outer_cylinder(vdata_values, prim_indices)
+        vertex_cnt = 0
+
+        vertex_cnt += self.create_bottom_cap_triangles(vdata_values, prim_indices)
+        vertex_cnt += self.create_bottom_cap_quads(vdata_values, prim_indices)
+        vertex_cnt += self.create_mantle_quads(vertex_cnt, vdata_values, prim_indices, self.invert)
+        sub_total = vertex_cnt
+        vertex_cnt += self.create_top_cap_triangles(sub_total, vdata_values, prim_indices)
+        vertex_cnt += self.create_top_cap_quads(sub_total, vdata_values, prim_indices)
 
         if self.slice_deg > 0:
             vertex_cnt += self.create_slice_cap_quads(vertex_cnt, vdata_values, prim_indices)
 
+        # Create the outer cylinder geom.
         geom_node = self.create_geom_node(
             vertex_cnt, vdata_values, prim_indices, 'cylinder')
 
-        # create the mantle of inner cylinder
+        # Create an inner cylinder mantle.
         if 0 < self.inner_radius < self.radius:
             vdata_values = array.array('f', [])
             prim_indices = array.array('H', [])
             vertex_cnt = self.create_mantle_quads(
                 0, vdata_values, prim_indices, not self.invert, outer=False)
 
-            # connect inner cylinder to outer cylinders
-            self.add(geom_node, vdata_values, vertex_cnt, prim_indices, len(prim_indices))
+            # Connect the inner cylinder mantle to outer cylinder.
+            self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
 
         return geom_node
