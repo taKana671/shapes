@@ -37,9 +37,13 @@ class Cylinder(ProceduralGeometry):
         self.color = (1, 1, 1, 1)
 
     def create_cap_triangles(self, vdata_values, bottom=True):
-        normal = Vec3(0, 0, -1) if bottom else Vec3(0, 0, 1)
+        normal = Vec3(0, 0, 1) if self.invert else Vec3(0, 0, -1)
+
+        if not bottom:
+            normal *= -1
+
         height = 0 if bottom else self.height
-        direction = -1 if bottom else 1
+        direction = -1 if self.invert else 1
         r = self.radius / self.segs_cap
         vertex_cnt = 0
 
@@ -51,13 +55,14 @@ class Cylinder(ProceduralGeometry):
                 vdata_values.extend([*vertex, *self.color, *normal, *uv])
                 vertex_cnt += 1
 
-            angle = self.delta_rad * i + self.slice_rad
+            angle = self.delta_rad * i + (0 if self.invert else self.slice_rad)
             c = math.cos(angle)
-            s = math.sin(angle)
+            s = math.sin(angle) * direction
             vertex = Point3(r * c, r * s, height)
 
             u = 0.5 + c * 0.5 / self.segs_cap
-            v = 0.5 + s * 0.5 * direction / self.segs_cap
+            _direction = -direction if bottom else direction
+            v = 0.5 + s * 0.5 * _direction / self.segs_cap
 
             vdata_values.extend([*vertex, *self.color, *normal, *(u, v)])
             vertex_cnt += 1
@@ -65,9 +70,13 @@ class Cylinder(ProceduralGeometry):
         return vertex_cnt
 
     def create_cap_quad_vertices(self, vdata_values, bottom=True):
-        normal = Vec3(0, 0, -1) if bottom else Vec3(0, 0, 1)
+        normal = Vec3(0, 0, 1) if self.invert else Vec3(0, 0, -1)
+
+        if not bottom:
+            normal *= -1
+
         height = 0 if bottom else self.height
-        direction = -1 if bottom else 1
+        direction = -1 if self.invert else 1  # bottom
         n = 0 if self.inner_radius else 1
         vertex_cnt = 0
 
@@ -76,14 +85,15 @@ class Cylinder(ProceduralGeometry):
             r = self.inner_radius + self.thickness * (i + n) / self.segs_cap
 
             for j in range(self.segs_c + 1):
-                angle = self.delta_rad * j + self.slice_rad
+                angle = self.delta_rad * j + (0 if self.invert else self.slice_rad)
                 c = math.cos(angle)
-                s = math.sin(angle)
+                s = math.sin(angle) * direction
                 vertex = Point3(r * c, r * s, height)
 
                 _r = r / self.radius
                 u = 0.5 + c * 0.5 * _r
-                v = 0.5 + s * 0.5 * direction * _r
+                _direction = -direction if bottom else direction
+                v = 0.5 + s * 0.5 * _direction * _r
 
                 vdata_values.extend([*vertex, *self.color, *normal, *(u, v)])
                 vertex_cnt += 1
@@ -123,6 +133,7 @@ class Cylinder(ProceduralGeometry):
 
     def create_mantle_quads(self, index_offset, vdata_values, prim_indices, invert, outer=True):
         radius = self.radius if outer else self.inner_radius
+        direction = -1 if invert else 1
         vertex_cnt = 0
 
         # mantle quad vertices
@@ -133,10 +144,10 @@ class Cylinder(ProceduralGeometry):
             for j in range(self.segs_c + 1):
                 angle = self.delta_rad * j + (0 if invert else self.slice_rad)
                 x = radius * math.cos(angle)
-                y = radius * math.sin(angle) * (-1 if invert else 1)
+                y = radius * math.sin(angle) * direction
                 vertex = Point3(x, y, z)
 
-                normal = Vec3(x, y, 0.0).normalized() * (-1 if invert else 1)
+                normal = Vec3(x, y, 0.0).normalized() * direction
                 u = j / self.segs_c
                 uv = Vec2(u, v)
 
@@ -192,16 +203,17 @@ class Cylinder(ProceduralGeometry):
 
     def create_slice_cap_quads(self, index_offset, vdata_values, prim_indices):
         vertex_cnt = 0
+        direction = -1 if self.invert else 1
 
         # the vertices of the slice cap quad
         for is_start in [True, False]:
             if is_start:
-                normal = Vec3(0, 1, 0)
+                normal = Vec3(0, direction, 0)
             else:
                 angle = self.delta_rad * self.segs_c
                 c = math.cos(angle)
                 s = -math.sin(angle)
-                normal = Vec3(s, -c, 0)
+                normal = Vec3(s, -c, 0) * direction
 
             for i in range(self.segs_sc_a + 1):
                 z = self.height * i / self.segs_sc_a
@@ -210,8 +222,8 @@ class Cylinder(ProceduralGeometry):
                 for j in range(self.segs_sc_r + 1):
                     r = self.inner_radius + (self.radius - self.inner_radius) * j / self.segs_sc_r
                     vertex = Point3(r, 0, z) if is_start else Point3(r * c, r * s, z)
-
-                    u = 0.5 + (0.5 if is_start else -0.5) * r / self.radius * -1
+                    coef = 0.5 if is_start else -0.5
+                    u = 0.5 + coef * r / self.radius * direction * -1
                     uv = Vec2(u, v)
 
                     vdata_values.extend([*vertex, *self.color, *normal, *uv])
@@ -226,24 +238,18 @@ class Cylinder(ProceduralGeometry):
                     vi4 = vi2 + 1
 
                     if is_start:
-                        prim_indices.extend([*(vi1, vi2, vi3), *(vi2, vi4, vi3)])
+                        prim_indices.extend((vi1, vi3, vi2) if self.invert else (vi1, vi2, vi3))
+                        prim_indices.extend((vi2, vi3, vi4) if self.invert else (vi2, vi4, vi3))
                     else:
-                        prim_indices.extend([*(vi1, vi3, vi2), *(vi2, vi3, vi4)])
+                        prim_indices.extend((vi1, vi2, vi3) if self.invert else (vi1, vi3, vi2))
+                        prim_indices.extend((vi2, vi4, vi3) if self.invert else (vi2, vi3, vi4))
 
                 index_offset += self.segs_sc_r + 1
             index_offset += self.segs_sc_r + 1
 
         return vertex_cnt
 
-    def check_variables(self):
-        if self.radius <= 0:
-            raise ValueError('Radius must be greater than 0.')
-
-        if self.inner_radius < 0 or self.inner_radius > self.radius:
-            raise ValueError('Inner radius must be between 0 and radius.')
-
     def get_geom_node(self):
-        self.check_variables()
         self.thickness = self.radius - self.inner_radius
         self.slice_rad = math.pi * self.slice_deg / 180
         self.delta_rad = math.pi * ((360 - self.slice_deg) / 180) / self.segs_c
@@ -260,7 +266,7 @@ class Cylinder(ProceduralGeometry):
         vertex_cnt += self.create_top_cap_triangles(sub_total, vdata_values, prim_indices)
         vertex_cnt += self.create_top_cap_quads(sub_total, vdata_values, prim_indices)
 
-        if self.slice_deg > 0:
+        if self.slice_deg > 0 and self.segs_sc_r > 0 and self.segs_sc_a > 0:
             vertex_cnt += self.create_slice_cap_quads(vertex_cnt, vdata_values, prim_indices)
 
         # Create the outer cylinder geom.
