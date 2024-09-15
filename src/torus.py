@@ -258,8 +258,6 @@ class Torus(ProceduralGeometry):
         self.delta_angle_v = math.pi * ((360 - self.section_slice_deg) / 180) / self.segs_s
         self.thickness = self.section_radius - self.section_inner_radius
 
-        print('section_rad', self.section_radius, 'section_inner_radius', self.section_inner_radius, 'thickness', self.thickness)
-
         vdata_values = array.array('f', [])
         prim_indices = array.array('H', [])
         vertex_cnt = 0

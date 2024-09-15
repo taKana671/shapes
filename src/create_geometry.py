@@ -56,7 +56,6 @@ class ProceduralGeometry:
         prim_array.unclean_set_num_rows(len(prim_indices))
         prim_mem = memoryview(prim_array).cast('B').cast('H')
         prim_mem[:] = prim_indices
-
         geom_node = GeomNode('geomnode')
         geom = Geom(vdata)
         geom.add_primitive(prim)
