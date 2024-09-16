@@ -46,7 +46,14 @@ class Torus(ProceduralGeometry):
         self.rssp = ring_slice_start_cap
         self.rsec = ring_slice_end_cap
 
-    def create_mantle(self, vdata_values, prim_indices, invert):
+    def create_mantle(self, vdata_values, prim_indices, outer=True):
+        invert = self.invert
+        section_radius = self.section_radius
+
+        if not outer:
+            invert = not self.invert
+            section_radius = self.section_inner_radius
+
         n = 0 if invert else self.ring_slice_rad
         direction = -1 if invert else 1
         vertex_cnt = 0
@@ -60,10 +67,10 @@ class Torus(ProceduralGeometry):
 
             for j in range(self.segs_s + 1):
                 angle_v = self.delta_angle_v * j + self.section_slice_rad
-                r = self.ring_radius - self.section_radius * math.cos(angle_v)
+                r = self.ring_radius - section_radius * math.cos(angle_v)
                 x = r * c
                 y = r * s
-                z = self.section_radius * math.sin(angle_v)
+                z = section_radius * math.sin(angle_v)
                 nx = x - self.ring_radius * c
                 ny = y - self.ring_radius * s
 
@@ -277,7 +284,6 @@ class Torus(ProceduralGeometry):
 
         # Create an inner torus mantle.
         if self.thickness > 0:
-            self.section_radius = self.section_inner_radius
             vdata_values = array.array('f', [])
             prim_indices = array.array('H', [])
             vertex_cnt = self.create_mantle(vdata_values, prim_indices, not self.invert)
