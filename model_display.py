@@ -10,6 +10,7 @@ from panda3d.core import NodePath, PandaNode, TextNode
 from panda3d.core import load_prc_file_data
 from panda3d.core import TransparencyAttrib
 from direct.gui.DirectFrame import DirectFrame
+import direct.gui.DirectGuiGlobals as DGG
 
 from panda3d.core import OrthographicLens, Camera, MouseWatcher, PGTop
 from direct.gui.DirectEntry import DirectEntry
@@ -24,6 +25,7 @@ load_prc_file_data("", """
     window-title ProceduralShapes
 """)
 
+
 class ModelDisplay(ShowBase):
 
     def __init__(self, model_cls):
@@ -31,19 +33,21 @@ class ModelDisplay(ShowBase):
         self.disable_mouse()
         self.camera_root = NodePath('camera_root')
         self.camera_root.reparent_to(self.render)
-        self.camera.reparent_to(self.camera_root)
-        self.camera.set_pos(Point3(30, -30, 0))
-        self.camera.look_at(Point3(0, 0, 0))
+        # self.camera.reparent_to(self.camera_root)
+        # self.camera.set_pos(Point3(30, -30, 0))
+        # self.camera.look_at(Point3(0, 0, 0))
 
         # self.camera.set_pos(Point3(20, -30, 5))
         # self.camera.look_at(Point3(0, 10, 2))
         self.setup_light()
 
+        # print(self.get_background_color())
         self.dragging = False
         self.before_mouse_pos = None
 
         self.model_maker = model_cls()
-        self.create_2d_region()
+        self.create_gui_region()
+        self.create_display_region()
 
         # self.model = Cylinder(invert=False, radius=2, inner_radius=0.5, slice_angle_deg=0, slice_caps_radial=2, slice_caps_axial=2).create()
         
@@ -72,10 +76,17 @@ class ModelDisplay(ShowBase):
         self.accept('d', self._toggle_wireframe)
         self.accept('r', self._rotate_model)
 
+        self.accept('a', self._output_texts)
+
         self.accept('escape', sys.exit)
         self.accept('mouse1', self.mouse_click)
         self.accept('mouse1-up', self.mouse_release)
         self.taskMgr.add(self.update, 'update')
+
+    def _output_texts(self):
+        for name, entry in self.gui.entries.items():
+            print(name, entry.get())
+
 
     def _rotate_model(self):
         self.is_rotating = not self.is_rotating
@@ -89,14 +100,15 @@ class ModelDisplay(ShowBase):
         else:
             self.model.set_render_mode_wireframe()
 
-    def calc_aspect_ratio(self, window_size, display_region):
+    def calc_aspect_ratio(self, display_region):
         """Return aspect ratio.
             Args:
-                window_size (Vec2): current window size; Vec2(width, height)
-                display_region (Vec4): (left, right, bottom, top); The ranges are from 0 to 1,
-                               where 0 is the left and bottomof the window,
-                               and 1 is the right and top of the window.
+                display_region (Vec4): (left, right, bottom, top); The ranges are from 0 to 1;
+                0 means the left and bottom of the window; 1 means the right and top of the window.
         """
+        props = self.win.get_properties()
+        window_size = props.get_size()
+
         region_w = display_region.y - display_region.x
         region_h = display_region.w - display_region.z
         display_w = int(window_size.x * region_w)
@@ -109,67 +121,72 @@ class ModelDisplay(ShowBase):
 
         return aspect_ratio
 
-    def create_2d_region(self):
-        props = self.win.get_properties()
-        region_size = Vec4(0.0, 0.3, 0.0, 1.0)
-
-        region = self.win.make_display_region(region_size)
-        region.set_sort(20)
-        region.set_clear_color((0.5, 0.5, 0.5, 1.))
-        region.set_clear_color_active(True)
-
-        cam2d = NodePath(Camera('cam2d'))
-        lens = OrthographicLens()
-        lens.set_film_size(2, 2)
-        lens.set_near_far(-1000, 1000)
-        # **************************************************************************
-        # window_size = props.get_size()
-        # ratio = self.calc_aspect_ratio(window_size, Vec4(0.0, 0.3, 0.0, 1.0))
-        # lens.set_aspect_ratio(ratio)
-        # **************************************************************************
-        cam2d.node().set_lens(lens)
-
-        gui_render2d = NodePath('gui_render2d')
-        gui_render2d.set_depth_test(False)
-        gui_render2d.set_depth_write(False)
-        cam2d.reparent_to(gui_render2d)
-        region.set_camera(cam2d)
-        gui_aspect2d = gui_render2d.attach_new_node(PGTop('gui_aspect2d'))
-
-        mw2d_nd = MouseWatcher('mw2d')
-        mw2d_nd.set_display_region(region)
-        input_ctrl = self.mouseWatcher.parent
-        mw2d_np = input_ctrl.attach_new_node(mw2d_nd)
-        gui_aspect2d.node().set_mouse_watcher(mw2d_nd)
-
-        # **************************************************************************
+    def calc_scale(self, region_size):
         aspect_ratio = self.get_aspect_ratio()
+
         w = region_size.y - region_size.x
         h = region_size.w - region_size.z
         new_aspect_ratio = aspect_ratio * w / h
 
-        if aspect_ratio > 1.:
+        if aspect_ratio > 1.0:
             s = 1. / h
-            gui_aspect2d.set_scale(s / new_aspect_ratio, 1.0, s)
+            return Vec3(s / new_aspect_ratio, 1.0, s)
         else:
             s = 1.0 / w
-            gui_aspect2d.set_scale(s, 1.0, s * new_aspect_ratio)
-        # **************************************************************************
+            return Vec3(s, 1.0, s * new_aspect_ratio)
+
+    def create_mouse_watcher(self, name, display_region):
+        mw_node = MouseWatcher(name)
+        # Gets MouseAndKeyboard, the parent of base.mouseWatcherNode
+        # that passes mouse data into MouseWatchers,
+        input_ctrl = self.mouseWatcher.get_parent()
+        input_ctrl.attach_new_node(mw_node)
+        # Restricts new MouseWatcher to the intended display region.
+        mw_node.set_display_region(display_region)
+        return mw_node
+
+    def create_display_region(self):
+        region_size = Vec4(0.3, 1.0, 0.0, 1.0)  # (left, right, bottom, top)
+        region = self.win.make_display_region(region_size)
+
+        cam = NodePath(Camera('cam3d'))
+        aspect_ratio = self.calc_aspect_ratio(region_size)
+        cam.node().get_lens().set_aspect_ratio(aspect_ratio)
+        region.set_camera(cam)
+        self.camNode.set_active(False)
+        cam.set_pos(Point3(30, -30, 0))
+        cam.look_at(Point3(0, 0, 0))
+        cam.reparent_to(self.camera_root)
+
+        self.mw3d_node = self.create_mouse_watcher('mw3d', region)
+
+    def create_gui_region(self):
+        region_size = Vec4(0.0, 0.3, 0.0, 1.0)   # (left, right, bottom, top)
+        region = self.win.make_display_region(region_size)
+        region.set_sort(20)
+        # region.set_clear_color((0.5, 0.5, 0.5, 1.))
+        # region.set_clear_color_active(True)
+
+        cam = NodePath(Camera('cam2d'))
+        lens = OrthographicLens()
+        lens.set_film_size(2, 2)
+        lens.set_near_far(-1000, 1000)
+        cam.node().set_lens(lens)
+
+        gui_render2d = NodePath('gui_render2d')
+        gui_render2d.set_depth_test(False)
+        gui_render2d.set_depth_write(False)
+        cam.reparent_to(gui_render2d)
+        region.set_camera(cam)
+
+        gui_aspect2d = gui_render2d.attach_new_node(PGTop('gui_aspect2d'))
+        scale = self.calc_scale(region_size)
+        gui_aspect2d.set_scale(scale)
+        mw2d_nd = self.create_mouse_watcher('mw2d', region)
+        gui_aspect2d.node().set_mouse_watcher(mw2d_nd)
 
         self.gui = Gui(gui_aspect2d, self.model_maker)
 
-
-        # entry = DirectEntry(
-        #     parent=gui_aspect2d,
-        #     pos=(0, 0, -0.3),
-        #     width=10,
-        #     scale=0.07,
-        #     initialText='abc',
-           
-        #     numLines=1,
-        #     # frameColor=(0, 0, 0, 1),
-        # )
-    
     def setup_light(self):
         ambient_light = NodePath(AmbientLight('ambient_light'))
         ambient_light.reparent_to(self.render)
@@ -226,8 +243,8 @@ class ModelDisplay(ShowBase):
         if self.is_rotating:
             self.rotate_model(dt)
 
-        if self.mouseWatcherNode.has_mouse():
-            mouse_pos = self.mouseWatcherNode.get_mouse()
+        if self.mw3d_node.has_mouse():
+            mouse_pos = self.mw3d_node.get_mouse()
 
             if self.dragging:
                 if globalClock.get_frame_time() - self.dragging_start_time >= 0.2:
@@ -243,31 +260,64 @@ class Gui(DirectFrame):
             parent=parent,
             # frameSize=(-0.65, 0.65, 0.2, -0.2),  # (left, right, bottom, top)
             frameSize=(-0.6, 0.6, -1., 1.),  # (left, right, bottom, top)
-            frameColor=(1, 1, 1, 0.8),
-            pos=Point3(0, 0, 0)
+            frameColor=(0.41, 0.41, 0.41, 1),
+            pos=Point3(0, 0, 0),
+            relief=DGG.SUNKEN,
+            borderWidth=(0.01, 0.01)
+
         )
         self.initialiseoptions(type(self))
         self.set_transparency(TransparencyAttrib.MAlpha)
         self.create_gui(instance)
 
     def create_gui(self, instance):
-        # font = base.loader.load_font('font/segoeui.ttf')
+        font = base.loader.load_font('fonts/DejaVuSans.ttf')
+        exclude = (
+            'bottom_center', 'top_center', 'fmt', 'color', 'stride'
+        )
+
+        replace_names = REPlACE_NAMES.get(instance.__class__.__name__)
 
         z = 0.8
-        for i, (name, val) in enumerate(instance.__dict__.items()):
-            DirectLabel(
-                parent=self,
-                text=name,
-                pos=Point3(0, 0, z - i * 0.05),
-                text_fg=LColor(0, 0, 0, 1),
-                # text_font=font,
-                text_scale=0.05,
-                frameColor=LColor(1, 1, 1, 0),
-                text_align=TextNode.ARight
-            )
+        i = 0
+        self.entries = {}
+
+        for name, val in instance.__dict__.items():
+            if name not in exclude:
+                display_name = replace_names[name] if replace_names is not None and \
+                    replace_names.get(name) else name
+                DirectLabel(
+                    parent=self,
+                    text=display_name,
+                    # text=name,
+                    pos=Point3(0.1, 0, z - i * 0.1),
+                    # text_fg=LColor(0, 0, 0, 1),
+                    text_fg=LColor(1, 1, 1, 1),
+                    text_font=font,
+                    text_scale=0.06,
+                    frameColor=LColor(1, 1, 1, 0),
+                    text_align=TextNode.ARight
+                )
+
+                entry = DirectEntry(
+                    parent=self,
+                    pos=(0.2, 0, z - i * 0.1),
+                    text_font=font,
+                    width=5,
+                    scale=0.05,
+                    initialText=str(val),
+                    numLines=1,
+                    relief=DGG.SUNKEN,
+                    frameColor=(0.41, 0.41, 0.41, 1.0),
+                )
+
+                i += 1
+                self.entries[name] = entry
 
 
-
+REPlACE_NAMES = {
+    'Cone': {'segs_sc_r': 'slice_caps_radial', 'segs_sc_a': 'slice_caps_axial'}
+}
 
 
 if __name__ == '__main__':
