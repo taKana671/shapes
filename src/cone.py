@@ -11,8 +11,8 @@ class Cone(ProceduralGeometry):
     """Create a Cone model.
     Args:
         height (float): height of the cone
-        segs_c (int): subdivisions of the mantle along a circular cross-section
-        segs_a (int): subdivisions of the mantle along the axis of rotation
+        segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3
+        segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1
         bottom_cap (int): radial subdivisions of the bottom cap; 0 means no cap
         top_cap(int): radial subdivisions of the top cap; 0 means no cap
         slice_deg (float): the angle of the pie slice removed from the cone, in degrees
@@ -25,23 +25,22 @@ class Cone(ProceduralGeometry):
         invert (bool): whether or not the geometry should be rendered inside-out; default is False
     """
 
-    def __init__(self, height=2., segs_c=40, segs_a=2, bottom_cap=2, top_cap=2, slice_deg=0.,
+    def __init__(self, height=2., segs_c=40, segs_a=2, segs_bottom_cap=2, segs_top_cap=2, slice_deg=0.,
                  bottom_radius=1., top_radius=0., bottom_inner_radius=0., top_inner_radius=0.,
                  slice_caps_radial=2, slice_caps_axial=2, invert=False):
         super().__init__()
-
         self.bottom_center = Point3(0, 0, 0)    # the position of the bottom center in object space
         self.top_center = Point3(0, 0, height)  # the position of the top center in object space
 
         self.segs_c = segs_c
         self.segs_a = segs_a
-        self.segs_bc = bottom_cap
-        self.segs_tc = top_cap
+        self.segs_bc = segs_bottom_cap
+        self.segs_tc = segs_top_cap
         self.slice_deg = slice_deg
 
         self.bottom_radius = bottom_radius
-        self.top_radius = top_radius
         self.bottom_inner_radius = bottom_inner_radius
+        self.top_radius = top_radius
         self.top_inner_radius = top_inner_radius
 
         self.segs_sc_r = slice_caps_radial
@@ -333,8 +332,7 @@ class Cone(ProceduralGeometry):
             vertex_cnt, vdata_values, prim_indices, 'cone')
 
         # Create an inner cone mantle.
-        if 0 < self.bottom_inner_radius < self.bottom_radius \
-                or 0 < self.top_inner_radius < self.top_radius:
+        if self.bottom_thickness or self.top_thickness:
             vdata_values = array.array('f', [])
             prim_indices = array.array('H', [])
             vertex_cnt = self.create_mantle_quads(0, vdata_values, prim_indices, outer=False)

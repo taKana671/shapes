@@ -10,8 +10,8 @@ class Torus(ProceduralGeometry):
 
     """Create a Torus model.
        Args:
-            segs_r (int): the number of segments of the ring
-            segs_s (int): the number of segments of the cross-sections
+            segs_r (int): the number of segments of the ring; mininum is 3
+            segs_s (int): the number of segments of the cross-sections; mininum is 3
             ring_radius (float): the radius of the ring; cannot be negative;
             section_radius (float): the radius of the cross-sections perpendicular to the ring; cannot be negative;
             section_inner_radius (float): the radius of the inner torus cross-sections
@@ -37,14 +37,14 @@ class Torus(ProceduralGeometry):
         self.ring_slice_deg = ring_slice_deg
         self.section_slice_deg = section_slice_deg
 
+        self.segs_sssc = section_slice_start_cap
+        self.segs_ssec = section_slice_end_cap
+
+        self.segs_rssp = ring_slice_start_cap
+        self.segs_rsec = ring_slice_end_cap
+
         self.invert = invert
         self.color = (1, 1, 1, 1)
-
-        self.sssc = section_slice_start_cap
-        self.ssec = section_slice_end_cap
-
-        self.rssp = ring_slice_start_cap
-        self.rsec = ring_slice_end_cap
 
     def create_mantle(self, vdata_values, prim_indices, outer=True):
         invert = self.invert
@@ -100,7 +100,7 @@ class Torus(ProceduralGeometry):
         vertex_cnt = 0
 
         for is_start in [True, False]:
-            if not (segs_sc := self.rssp if is_start else self.rsec):
+            if not (segs_sc := self.segs_rssp if is_start else self.segs_rsec):
                 continue
 
             offset = index_offset + vertex_cnt
@@ -202,7 +202,7 @@ class Torus(ProceduralGeometry):
         cap_normal = quat.xform(cap_normal)
 
         for is_start in [True, False]:
-            if not (segs_sc := self.sssc if is_start else self.ssec):
+            if not (segs_sc := self.segs_sssc if is_start else self.segs_ssec):
                 continue
 
             offset = index_offset + vertex_cnt
@@ -283,7 +283,7 @@ class Torus(ProceduralGeometry):
             vertex_cnt, vdata_values, prim_indices, 'torus')
 
         # Create an inner torus mantle.
-        if self.thickness > 0:
+        if self.thickness:
             vdata_values = array.array('f', [])
             prim_indices = array.array('H', [])
             vertex_cnt = self.create_mantle(vdata_values, prim_indices, not self.invert)

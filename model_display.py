@@ -1,23 +1,24 @@
 import sys
 import math
+from enum import Enum, auto
+from distutils.util import strtobool
 
+import direct.gui.DirectGuiGlobals as DGG
+from panda3d.core import Vec3, Vec2, Point3, LColor, Vec4
+from panda3d.core import AmbientLight, DirectionalLight
+from panda3d.core import NodePath, TextNode
+from panda3d.core import load_prc_file_data
+from panda3d.core import TransparencyAttrib
+from panda3d.core import OrthographicLens, Camera, MouseWatcher, PGTop
+from direct.gui.DirectFrame import DirectFrame
+from direct.gui.DirectEntry import DirectEntry
+from direct.gui.DirectLabel import DirectLabel
+from direct.gui.DirectButton import DirectButton
+from direct.gui.DirectGui import OkDialog
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
 
-from panda3d.core import Vec3, Vec2, Point3, LColor, Vec4
-from panda3d.core import AmbientLight, DirectionalLight
-from panda3d.core import NodePath, PandaNode, TextNode
-from panda3d.core import load_prc_file_data
-from panda3d.core import TransparencyAttrib
-from direct.gui.DirectFrame import DirectFrame
-import direct.gui.DirectGuiGlobals as DGG
-
-from panda3d.core import OrthographicLens, Camera, MouseWatcher, PGTop
-from direct.gui.DirectEntry import DirectEntry
-from direct.gui.DirectLabel import DirectLabel
-
-
-from src import Cylinder, Sphere, QuickSphere, Torus, Cone
+from src import Cylinder, Sphere, QuickSphere, Torus, Cone, Plane, Cube
 
 
 load_prc_file_data("", """
@@ -26,79 +27,101 @@ load_prc_file_data("", """
 """)
 
 
+def is_int(str_val):
+    try:
+        int(str_val, 10)
+    except ValueError:
+        return False
+    else:
+        return True
+
+
+def is_float(str_val):
+    try:
+        float(str_val)
+    except ValueError:
+        return False
+    else:
+        return True
+
+
+def is_bool(str_val):
+    try:
+        strtobool(str_val)
+    except ValueError:
+        return False
+    else:
+        return True
+
+
+class Status(Enum):
+
+    SHOW_MODEL = auto()
+    REPLACE_MODEL = auto()
+
+
 class ModelDisplay(ShowBase):
 
     def __init__(self, model_cls):
         super().__init__()
+        self.model_cls = model_cls
+
         self.disable_mouse()
         self.camera_root = NodePath('camera_root')
         self.camera_root.reparent_to(self.render)
-        # self.camera.reparent_to(self.camera_root)
-        # self.camera.set_pos(Point3(30, -30, 0))
-        # self.camera.look_at(Point3(0, 0, 0))
-
-        # self.camera.set_pos(Point3(20, -30, 5))
-        # self.camera.look_at(Point3(0, 10, 2))
         self.setup_light()
-
-        # print(self.get_background_color())
-        self.dragging = False
-        self.before_mouse_pos = None
-
-        self.model_maker = model_cls()
-        self.create_gui_region()
-        self.create_display_region()
-
-        # self.model = Cylinder(invert=False, radius=2, inner_radius=0.5, slice_angle_deg=0, slice_caps_radial=2, slice_caps_axial=2).create()
-        
-        # model_maker = model_cls()
-        # model_maker = Cone()
-      
-        # model_maker = Torus(ring_slice_deg=60, section_slice_deg=90, section_inner_radius=0.3)
-        # self.model = Cone().create()
-        self.model = self.model_maker.create()
-        self.model.reparent_to(self.render)
-        self.model.set_pos(Point3(0, 0, 0))
-        self.model.set_color(LColor(1, 0, 0, 1))
-        self.model.set_scale(4)
-
-        # self.model2 = model_maker.create()
-        # self.model2.reparent_to(self.render)
-        # self.model2.set_pos(Point3(0, 0, 0))
-        # self.model2.set_color(LColor(0, 1, 0, 1))
-        # self.model2.set_scale(4)
-        # self.model2.set_pos(Point3(0, 0, 0))
-
-        # self.model.set_texture(self.loader.load_texture('src/board.jpg'))
 
         self.is_rotating = True
         self.show_wireframe = True
-        self.accept('d', self._toggle_wireframe)
-        self.accept('r', self._rotate_model)
 
-        self.accept('a', self._output_texts)
+        self.mw3d_node = self.create_display_region()
+        self.gui_aspect2d = self.create_gui_region()
+
+        model_maker = self.model_cls()
+        self.gui = Gui(self.gui_aspect2d, model_maker)
+
+        model = model_maker.create()
+        self.dispay_model(model, hpr=Vec3(0, 0, 0))
+
+        self.dragging = False
+        self.before_mouse_pos = None
+        self.state = Status.SHOW_MODEL
+
+        # self.accept('d', self.toggle_wireframe)
+        # self.accept('r', self.toggle_rotation)
 
         self.accept('escape', sys.exit)
         self.accept('mouse1', self.mouse_click)
         self.accept('mouse1-up', self.mouse_release)
         self.taskMgr.add(self.update, 'update')
 
-    def _output_texts(self):
-        for name, entry in self.gui.entries.items():
-            print(name, entry.get())
+    def dispay_model(self, model, hpr):
+        model.set_hpr(hpr)
+        model.set_pos(Point3(0, 0, 0))
+        model.set_color(LColor(1, 0, 0, 1))
+        model.set_scale(4)
+        model.reparent_to(self.render)
 
+        if self.show_wireframe:
+            model.set_render_mode_wireframe()
 
-    def _rotate_model(self):
+        self.model = model
+
+    def output_bam_file(self):
+        # node_path.writeBamFile(filepath)
+        pass
+
+    def toggle_rotation(self):
         self.is_rotating = not self.is_rotating
 
-    def _toggle_wireframe(self):
-        self.show_wireframe = not self.show_wireframe
+    def toggle_wireframe(self):
         # self.toggle_wireframe()
 
         if self.show_wireframe:
             self.model.set_render_mode_filled()
         else:
             self.model.set_render_mode_wireframe()
+        self.show_wireframe = not self.show_wireframe
 
     def calc_aspect_ratio(self, display_region):
         """Return aspect ratio.
@@ -143,9 +166,12 @@ class ModelDisplay(ShowBase):
         input_ctrl.attach_new_node(mw_node)
         # Restricts new MouseWatcher to the intended display region.
         mw_node.set_display_region(display_region)
+
         return mw_node
 
     def create_display_region(self):
+        """Create a model display region and its MouseWatcher.
+        """
         region_size = Vec4(0.3, 1.0, 0.0, 1.0)  # (left, right, bottom, top)
         region = self.win.make_display_region(region_size)
 
@@ -158,10 +184,14 @@ class ModelDisplay(ShowBase):
         cam.look_at(Point3(0, 0, 0))
         cam.reparent_to(self.camera_root)
 
-        self.mw3d_node = self.create_mouse_watcher('mw3d', region)
+        mw3d_node = self.create_mouse_watcher('mw3d', region)
+        return mw3d_node
 
     def create_gui_region(self):
-        region_size = Vec4(0.0, 0.3, 0.0, 1.0)   # (left, right, bottom, top)
+        """Create a custom 2D display region and its MouseWatcher.
+        """
+        # (left, right, bottom, top)
+        region_size = Vec4(0.0, 0.3, 0.0, 1.0)
         region = self.win.make_display_region(region_size)
         region.set_sort(20)
         # region.set_clear_color((0.5, 0.5, 0.5, 1.))
@@ -185,7 +215,7 @@ class ModelDisplay(ShowBase):
         mw2d_nd = self.create_mouse_watcher('mw2d', region)
         gui_aspect2d.node().set_mouse_watcher(mw2d_nd)
 
-        self.gui = Gui(gui_aspect2d, self.model_maker)
+        return gui_aspect2d
 
     def setup_light(self):
         ambient_light = NodePath(AmbientLight('ambient_light'))
@@ -237,18 +267,54 @@ class ModelDisplay(ShowBase):
 
         self.model.set_hpr(angle)
 
+    def get_input_value(self, key, entry):
+        str_val = entry.get()
+
+        if is_int(str_val):
+            return int(str_val)
+
+        if is_float(str_val):
+            return float(str_val)
+
+        if is_bool(str_val):
+            return bool(strtobool(str_val))
+
+        raise ValueError(f'{key}: input value is invalid.')
+
+    def reflect_changes(self):
+        self.state = Status.REPLACE_MODEL
+
+    def create_new_model(self):
+        try:
+            params = {key: self.get_input_value(key, entry) for key, entry in self.gui.entries.items()}
+            new_model = self.model_cls(**params).create()
+        except ValueError as e:
+            self.gui.show_dialog(e.args[0])
+        else:
+            return new_model
+
     def update(self, task):
         dt = globalClock.get_dt()
 
-        if self.is_rotating:
-            self.rotate_model(dt)
+        match self.state:
 
-        if self.mw3d_node.has_mouse():
-            mouse_pos = self.mw3d_node.get_mouse()
+            case Status.SHOW_MODEL:
+                if self.is_rotating:
+                    self.rotate_model(dt)
 
-            if self.dragging:
-                if globalClock.get_frame_time() - self.dragging_start_time >= 0.2:
-                    self.rotate_camera(mouse_pos, dt)
+                if self.mw3d_node.has_mouse():
+                    mouse_pos = self.mw3d_node.get_mouse()
+
+                    if self.dragging:
+                        if globalClock.get_frame_time() - self.dragging_start_time >= 0.2:
+                            self.rotate_camera(mouse_pos, dt)
+
+            case Status.REPLACE_MODEL:
+                if new_model := self.create_new_model():
+                    hpr = self.model.get_hpr()
+                    self.model.remove_node()
+                    self.dispay_model(new_model, hpr)
+                self.state = Status.SHOW_MODEL
 
         return task.cont
 
@@ -256,11 +322,14 @@ class ModelDisplay(ShowBase):
 class Gui(DirectFrame):
 
     def __init__(self, parent, instance):
+        self.frame_color = LColor(0.6, 0.6, 0.6, 1)
+        self.text_color = LColor(1.0, 1.0, 1.0, 1.0)
+        self.font = base.loader.load_font('fonts/DejaVuSans.ttf')
+
         super().__init__(
             parent=parent,
-            # frameSize=(-0.65, 0.65, 0.2, -0.2),  # (left, right, bottom, top)
             frameSize=(-0.6, 0.6, -1., 1.),  # (left, right, bottom, top)
-            frameColor=(0.41, 0.41, 0.41, 1),
+            frameColor=self.frame_color,
             pos=Point3(0, 0, 0),
             relief=DGG.SUNKEN,
             borderWidth=(0.01, 0.01)
@@ -271,29 +340,28 @@ class Gui(DirectFrame):
         self.create_gui(instance)
 
     def create_gui(self, instance):
-        font = base.loader.load_font('fonts/DejaVuSans.ttf')
-        exclude = (
-            'bottom_center', 'top_center', 'fmt', 'color', 'stride'
-        )
+        start_z = 0.85
+        last_z = self.create_edit_boxes(start_z, instance)
+        self.create_buttons(last_z - 0.2)
 
-        replace_names = REPlACE_NAMES.get(instance.__class__.__name__)
-
-        z = 0.8
-        i = 0
+    def create_edit_boxes(self, start_z, instance):
+        exclude = ('bottom_center', 'top_center', 'fmt', 'color', 'stride')
+        replaces = REPlACE_NAMES.get(instance.__class__.__name__, {})
         self.entries = {}
 
-        for name, val in instance.__dict__.items():
+        for i, (name, val) in enumerate(
+                (k, v) for k, v in instance.__dict__.items() if k not in exclude):
+
             if name not in exclude:
-                display_name = replace_names[name] if replace_names is not None and \
-                    replace_names.get(name) else name
+                labe_text = replaces[name] if name in replaces else name
+                z = start_z - i * 0.1
+
                 DirectLabel(
                     parent=self,
-                    text=display_name,
-                    # text=name,
-                    pos=Point3(0.1, 0, z - i * 0.1),
-                    # text_fg=LColor(0, 0, 0, 1),
-                    text_fg=LColor(1, 1, 1, 1),
-                    text_font=font,
+                    text=labe_text,
+                    pos=Point3(0.2, 0.0, z),
+                    text_fg=self.text_color,
+                    text_font=self.font,
                     text_scale=0.06,
                     frameColor=LColor(1, 1, 1, 0),
                     text_align=TextNode.ARight
@@ -301,25 +369,88 @@ class Gui(DirectFrame):
 
                 entry = DirectEntry(
                     parent=self,
-                    pos=(0.2, 0, z - i * 0.1),
-                    text_font=font,
+                    pos=(0.25, 0, z),
+                    text_fg=self.text_color,
+                    text_font=self.font,
                     width=5,
                     scale=0.05,
                     initialText=str(val),
                     numLines=1,
                     relief=DGG.SUNKEN,
-                    frameColor=(0.41, 0.41, 0.41, 1.0),
+                    frameColor=self.frame_color
                 )
+                self.entries[labe_text] = entry
+                # self.default_settings[name] = val
 
-                i += 1
-                self.entries[name] = entry
+        return z
+
+    def create_buttons(self, start_z):
+        buttons = [
+            ('Reflect Changes', base.reflect_changes),
+            ('Toggle Wireframe', base.toggle_wireframe),
+            ('Toggle Rotation', base.toggle_rotation),
+            ('Output Bam File', base.output_bam_file)
+        ]
+
+        for i, (text, cmd) in enumerate(buttons):
+            z = start_z - 0.1 * i
+            DirectButton(
+                parent=self,
+                relief=DGG.RAISED,
+                frameSize=(-0.51, 0.51, -0.05, 0.05),
+                frameColor=self.frame_color,
+                text=text,
+                pos=Point3(0, 0, z),
+                text_fg=self.text_color,
+                text_scale=0.05,
+                text_font=self.font,
+                text_pos=(0, -0.01),
+                borderWidth=(0.01, 0.01),
+                command=cmd
+            )
+
+    def show_dialog(self, msg):
+        self.dialog = OkDialog(
+            dialogName='validation',
+            frameSize=(-1, 1, -0.2, 0.1),
+            frameColor=self.frame_color,
+            text=msg,
+            text_scale=0.05,
+            text_font=self.font,
+            text_fg=self.text_color,
+            buttonSize=(-0.08, 0.08, -0.05, 0.05),
+            buttonTextList=['OK'],
+            button_frameColor=self.frame_color,
+            button_text_pos=(0, -0.01),
+            button_text_scale=0.04,
+            button_text_fg=self.text_color,
+            relief=DGG.FLAT,
+            pos=Point3(0.5, 0, 0.8),
+            midPad=0.02,
+            command=self.withdraw_dialog
+        )
+
+    def withdraw_dialog(self, btn):
+        def withdraw(task):
+            self.dialog.cleanup()
+            return task.done
+
+        base.taskMgr.do_method_later(0.5, withdraw, 'withdraw')
 
 
 REPlACE_NAMES = {
-    'Cone': {'segs_sc_r': 'slice_caps_radial', 'segs_sc_a': 'slice_caps_axial'}
+    'Cone': {'segs_sc_r': 'slice_caps_radial', 'segs_sc_a': 'slice_caps_axial', 'segs_bc': 'segs_bottom_cap', 'segs_tc': 'segs_top_cap'},
+    'Cylinder': {'segs_sc_r': 'slice_caps_radial', 'segs_sc_a': 'slice_caps_axial', 'segs_bc': 'segs_bottom_cap', 'segs_tc': 'segs_top_cap'},
+    'Torus': {'segs_sssc': 'section_slice_start_cap', 'segs_ssec': 'section_slice_end_cap', 'segs_rssp': 'ring_slice_start_cap', 'segs_rsec': 'ring_slice_end_cap'},
 }
 
 
+def main(model_cls):
+    app = ModelDisplay(model_cls)
+    app.run()
+
+
 if __name__ == '__main__':
-    app = ModelDisplay(Cone)
+    app = ModelDisplay(Plane)
+    # app = ModelDisplay()
     app.run()

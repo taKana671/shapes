@@ -1,7 +1,7 @@
 import array
 import math
 
-from panda3d.core import Vec3, Point3, Vec2
+from panda3d.core import Vec3, Point3
 
 from .create_geometry import ProceduralGeometry
 
@@ -10,13 +10,13 @@ class Sphere(ProceduralGeometry):
     """Create a sphere model.
        Args:
             radius (int): the radius of sphere;
-            segments (int): the number of surface subdivisions;
+            segs_s (int): the number of surface subdivisions;
     """
 
-    def __init__(self, radius=1.5, segments=22):
+    def __init__(self, radius=1.5, segs_s=40):
         super().__init__()
         self.radius = radius
-        self.segments = segments
+        self.segs_s = segs_s
         self.color = (1, 1, 1, 1)
 
     def create_bottom_pole(self, vdata_values, prim_indices):
@@ -24,37 +24,37 @@ class Sphere(ProceduralGeometry):
         normal = Vec3(0.0, 0.0, -1.0)
         vertex = Point3(0.0, 0.0, -self.radius)
 
-        for i in range(self.segments):
-            u = i / self.segments
+        for i in range(self.segs_s):
+            u = i / self.segs_s
             vdata_values.extend(vertex)
             vdata_values.extend(self.color)
             vdata_values.extend(normal)
             vdata_values.extend((u, 0.0))
 
             # the vertex order of the pole vertices
-            prim_indices.extend((i, i + self.segments + 1, i + self.segments))
+            prim_indices.extend((i, i + self.segs_s + 1, i + self.segs_s))
 
-        return self.segments
+        return self.segs_s
 
     def create_quads(self, index_offset, vdata_values, prim_indices):
-        delta_angle = 2 * math.pi / self.segments
+        delta_angle = 2 * math.pi / self.segs_s
         vertex_cnt = 0
 
         # the quad vertices
-        for i in range((self.segments - 2) // 2):
+        for i in range((self.segs_s - 2) // 2):
             angle_v = delta_angle * (i + 1)
             radius_h = self.radius * math.sin(angle_v)
             z = self.radius * -math.cos(angle_v)
-            v = 2.0 * (i + 1) / self.segments
+            v = 2.0 * (i + 1) / self.segs_s
 
-            for j in range(self.segments + 1):
+            for j in range(self.segs_s + 1):
                 angle = delta_angle * j
                 c = math.cos(angle)
                 s = math.sin(angle)
                 x = radius_h * c
                 y = radius_h * s
                 normal = Vec3(x, y, z).normalized()
-                u = j / self.segments
+                u = j / self.segs_s
 
                 vdata_values.extend((x, y, z))
                 vdata_values.extend(self.color)
@@ -62,12 +62,12 @@ class Sphere(ProceduralGeometry):
                 vdata_values.extend((u, v))
 
                 # the vertex order of the quad vertices
-                if i > 0 and j <= self.segments:
-                    px = i * (self.segments + 1) + j + index_offset
-                    prim_indices.extend((px, px - self.segments - 1, px - self.segments))
-                    prim_indices.extend((px, px - self.segments, px + 1))
+                if i > 0 and j <= self.segs_s:
+                    px = i * (self.segs_s + 1) + j + index_offset
+                    prim_indices.extend((px, px - self.segs_s - 1, px - self.segs_s))
+                    prim_indices.extend((px, px - self.segs_s, px + 1))
 
-            vertex_cnt += self.segments + 1
+            vertex_cnt += self.segs_s + 1
 
         return vertex_cnt
 
@@ -76,8 +76,8 @@ class Sphere(ProceduralGeometry):
         normal = Vec3(0.0, 0.0, 1.0)
 
         # the top pole vertices
-        for i in range(self.segments):
-            u = i / self.segments
+        for i in range(self.segs_s):
+            u = i / self.segs_s
             vdata_values.extend(vertex)
             vdata_values.extend(self.color)
             vdata_values.extend(normal)
@@ -85,9 +85,9 @@ class Sphere(ProceduralGeometry):
 
             # the vertex order of the top pole vertices
             x = i + index_offset
-            prim_indices.extend((x, x + 1, x + self.segments + 1))
+            prim_indices.extend((x, x + 1, x + self.segs_s + 1))
 
-        return self.segments
+        return self.segs_s
 
     def get_geom_node(self):
         vdata_values = array.array('f', [])
@@ -97,7 +97,7 @@ class Sphere(ProceduralGeometry):
         # create vertices of the bottom pole, quads, and top pole
         vertex_cnt += self.create_bottom_pole(vdata_values, prim_indices)
         vertex_cnt += self.create_quads(vertex_cnt, vdata_values, prim_indices)
-        vertex_cnt += self.create_top_pole(vertex_cnt - self.segments - 1, vdata_values, prim_indices)
+        vertex_cnt += self.create_top_pole(vertex_cnt - self.segs_s - 1, vdata_values, prim_indices)
 
         geom_node = self.create_geom_node(
             vertex_cnt, vdata_values, prim_indices, 'sphere')
