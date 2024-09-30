@@ -75,7 +75,8 @@ class ModelDisplay(ShowBase):
         self.gui_aspect2d = self.create_gui_region()
         self.gui = Gui(self.gui_aspect2d)
 
-        self.model_cls = Cone
+        # self.model_cls = Cone
+        self.model_cls = Sphere
         model_maker = self.model_cls()
         self.gui.set_default_values(model_maker)
 
@@ -94,9 +95,17 @@ class ModelDisplay(ShowBase):
         self.accept('mouse1-up', self.mouse_release)
         self.taskMgr.add(self.update, 'update')
 
-    def dispay_model(self, model, hpr, scale=4):
+    def dispay_model(self, model, hpr=None, scale=4):
+        # If hpr is None, inherit hpr from the current model and remove it.
+        if hpr is None:
+            hpr = self.model.get_hpr()
+            self.model.remove_node()
+
         self.model = model
         self.model.set_pos_hpr_scale(Point3(0, 0, 0), hpr, scale)
+
+        # self.model.set_texture(self.loader.load_texture('board.jpg'))
+
         self.model.set_color(LColor(1, 0, 0, 1))
         self.model.reparent_to(self.render)
 
@@ -267,7 +276,7 @@ class ModelDisplay(ShowBase):
             angle *= dt
             self.camera_root.set_hpr(self.camera_root.get_hpr() + angle)
 
-        self.before_mouse_pos = Vec2(mouse_pos.x, mouse_pos.y)
+        self.before_mouse_pos = Vec2(mouse_pos.xy)
 
     def rotate_model(self, dt):
         angle = self.model.get_hpr() + 20 * dt
@@ -289,10 +298,9 @@ class ModelDisplay(ShowBase):
 
         raise ValueError(f'{label_txt}: input value is invalid.')
 
-    def change_model_type(self, name):
-        # TODO: how about using eval. eval(name)??????
-
+    def change_model_types(self, name):
         match name.title():
+
             case Cone.__name__:
                 self.model_cls = Cone
             case Cylinder.__name__:
@@ -350,19 +358,13 @@ class ModelDisplay(ShowBase):
 
             case Status.REPLACE_MODEL:
                 if new_model := self.create_new_model():
-                    hpr = self.model.get_hpr()
-                    self.model.remove_node()
-                    self.dispay_model(new_model, hpr)
+                    self.dispay_model(new_model)
                 self.state = Status.SHOW_MODEL
 
             case Status.REPLACE_CLASS:
-                hpr = self.model.get_hpr()
-                self.model.remove_node()
-
                 model_maker = self.model_cls()
                 self.gui.set_default_values(model_maker)
-                new_model = self.model_cls().create()
-                self.dispay_model(new_model, hpr)
+                self.dispay_model(model_maker.create())
                 self.state = Status.SHOW_MODEL
 
         return task.cont
@@ -390,23 +392,23 @@ class Gui(DirectFrame):
         self.create_gui()
 
     def create_gui(self):
-        last_z = self.create_model_type_btns(0.9)
-        self.create_edit_boxes(last_z - 0.17)
-        self.create_control_buttons(-0.8)
+        last_z = self.create_edit_boxes(0.88)
+        last_z = self.create_control_buttons(last_z - 0.12)
+        self.create_model_type_btns(last_z - 0.15)
 
     def create_model_type_btns(self, start_z):
         class_names = ['cone', 'cylinder', 'torus', 'sphere', 'cube', 'plane']
 
         for i, text in enumerate(class_names):
             q, mod = divmod(i, 3)
-            x = -0.34 + mod * 0.344
+            x = -0.34 + mod * 0.341
             z = start_z - q * 0.1
 
             DirectButton(
                 parent=self,
                 pos=Point3(x, 0, z),
                 relief=DGG.RAISED,
-                frameSize=(-0.172, 0.172, -0.05, 0.05),
+                frameSize=(-0.171, 0.17, -0.05, 0.05),
                 frameColor=self.frame_color,
                 text=text,
                 text_fg=self.text_color,
@@ -414,7 +416,7 @@ class Gui(DirectFrame):
                 text_font=self.font,
                 text_pos=(0, -0.01),
                 borderWidth=(0.01, 0.01),
-                command=base.change_model_type,
+                command=base.change_model_types,
                 extraArgs=[text]
             )
 
@@ -468,6 +470,8 @@ class Gui(DirectFrame):
             )
             self.entries[label] = entry
 
+        return z
+
     def create_control_buttons(self, start_z):
         buttons = [
             ('Reflect Changes', base.reflect_changes),
@@ -495,6 +499,7 @@ class Gui(DirectFrame):
                 text_pos=(0, -0.01),
                 command=cmd
             )
+        return z
 
     def show_dialog(self, msg):
         self.dialog = OkDialog(
@@ -529,6 +534,7 @@ REPLACE_NAMES = {
     'segs_sc_a': 'slice_caps_axial',
     'segs_bc': 'segs_bottom_cap',
     'segs_tc': 'segs_top_cap',
+    'segs_sc': 'segs_slice_caps',
     'segs_sssc': 'section_slice_start_cap',
     'segs_ssec': 'section_slice_end_cap',
     'segs_rssp': 'ring_slice_start_cap',
