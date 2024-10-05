@@ -17,10 +17,15 @@ def validate(name, value):
 
     match RegexEqual(name):
 
-        case '^segs_[crs]$':
+        case '^segs_[crsh]$':
             if type(value) is int and value >= 3:
                 return
             msg = 'must be integer. minimum is 3'
+
+        case '^segs_[v]$':
+            if type(value) is int and value >= 2:
+                return
+            msg = 'must be integer. minimum is 2'
 
         case '^segs_[awdh]$':
             if type(value) is int and value >= 1:
@@ -54,6 +59,7 @@ def validate(name, value):
 
         case '(_|^)thickness$':
             if value >= 0:
+
                 return
             msg = 'inner radius must be in the range from 0 to radius'
 
@@ -66,6 +72,11 @@ def validate(name, value):
             if value > 0:
                 return
             msg = 'must be greater than 0'
+
+        # case '^bottom_clip$':
+        #     if -1 <= value <= 1:
+        #         return
+        #     msg = 'must be -1 <= bottom_clip <= 1'
 
     if msg:
         raise ValueError(f'{name}: {msg}.')

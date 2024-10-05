@@ -2,6 +2,7 @@ import array
 import math
 from types import SimpleNamespace
 
+import numpy as np
 from panda3d.core import Vec3, Point3, Vec2
 
 from .create_geometry import ProceduralGeometry
@@ -10,13 +11,26 @@ from .create_geometry import ProceduralGeometry
 class Sphere(ProceduralGeometry):
     """Create a sphere model.
        Args:
-            radius (int): the radius of sphere;
-            segs_s (int): the number of surface subdivisions;
-            segs_h(int): subdivisions along horizontal circles (or circle arcs, if sliced); minimum = 3
-            bottom_cap (int): radial subdivisions of the bottom clipping cap; 0 (no cap)
+            radius (float): the radius of sphere; more than 0;
+            inner_radius (float): the radius of the sphere; cannot be negative; must be in [0., radius]
+            segs_h(int): subdivisions along horizontal circles; minimum = 3
+            segs_v (int): subdivisions along vertical semicircles; minimum = 2
+            segs_bottom_cap (int): radial subdivisions of the bottom clipping cap; minimum = 0 (no cap)
+            segs_top_cap (int): radial subdivisions of the top clipping cap; minimum = 0 (no cap)
+            segs_slice_caps (int): radial subdivisions of the slice caps; minimum = 0 (no caps)
+            slice_deg (float): the angle of the pie slice removed from the sphere, in degrees; must be in [0., 360.]
+            bottom_clip (float):
+                relative height of the plane that cuts off a bottom part of the sphere;
+                must be in [-1., 1.] range;
+                -1. (no clipping)
+            top_clip (float):
+                relative height of the plane that cuts off a top part of the sphere;
+                must be in [bottom_clip, 1.] range;
+                1. (no clipping);
+            invert (bool): whether or not the geometry should be rendered inside-out; default is False
     """
 
-    def __init__(self, radius=2., inner_radius=0., segs_h=40, segs_v=40,
+    def __init__(self, radius=1., inner_radius=0, segs_h=40, segs_v=40,
                  segs_bottom_cap=2, segs_top_cap=2, segs_slice_caps=2,
                  slice_deg=0, bottom_clip=-1., top_clip=1., invert=False):
         super().__init__()
@@ -29,7 +43,6 @@ class Sphere(ProceduralGeometry):
         self.segs_sc = segs_slice_caps
         self.top_clip = top_clip
         self.bottom_clip = bottom_clip
-
         self.slice_deg = slice_deg
         self.invert = invert
         self.color = (1, 1, 1, 1)
@@ -107,7 +120,7 @@ class Sphere(ProceduralGeometry):
             x = radius_h * math.cos(angle_h)
             y = radius_h * math.sin(angle_h) * direction
             vertex = Point3(x, y, z)
-            normal = vertex.normalized() * direction
+            normal = Vec3(x, y, z).normalized() * direction
             uv = Vec2(i / self.segs_h, v)
 
             vdata_values.extend([*vertex, *self.color, *normal, *uv])
@@ -118,6 +131,7 @@ class Sphere(ProceduralGeometry):
         radius_h = math.sqrt(self.radius ** 2 - cap.z ** 2)
         direction = -1 if self.invert else 1
         _delta = 0 if self.invert else self.slice_rad
+
         v = (math.pi - math.acos(cap.z / self.radius)) / math.pi
 
         for i in range(self.segs_h + 1):
@@ -336,18 +350,14 @@ class Sphere(ProceduralGeometry):
 
     def get_hollow_cap_inner_vertices(self, seg_vecs, inner_verts, c_h=None, s_h=None):
         inner_bottom_height = self.bottom_height + self.thickness
-        inner_bottom_clip = inner_bottom_height / self.inner_radius
-        
-        # cos range from -1 <= x <= 1; if out of range, ValueError: math domain error occur.
+        x = np.clip(inner_bottom_height / self.inner_radius, -1.0, 1.0)
+        inner_bottom_angle = math.pi - math.acos(x)
+        # inner_bottom_angle = math.pi - math.acos(inner_bottom_height / self.inner_radius)
 
-        # np.clip(inner_bottom_height / 0.5, -1.0, 1.0)
-        # inner_bottom_angle = math.pi - math.acos(np.clip(inner_bottom_height / self.inner_radius, -1.0, 1.0))
-        inner_bottom_angle = math.pi - math.acos(inner_bottom_height / self.inner_radius)
         inner_top_height = self.top_height - self.thickness
-        inner_top_clip = inner_top_height / self.inner_radius
-        
-        inner_top_angle = math.acos(inner_top_height / self.inner_radius)
-        # inner_top_angle = math.pi - math.acos(np.clip(inner_top_height / self.inner_radius, -1.0, 1.0))
+        x = np.clip(inner_top_height / self.inner_radius, -1.0, 1.0)
+        inner_top_angle = math.acos(x)
+        # inner_top_angle = math.acos(inner_top_height / self.inner_radius)
         inner_delta_angle_v = (math.pi - inner_bottom_angle - inner_top_angle) / self.segs_v
 
         if self.bottom_clip > -1.:
@@ -364,12 +374,12 @@ class Sphere(ProceduralGeometry):
             i_r = self.inner_radius * math.sin(i_angle_v)
             i_z = self.inner_radius * i_c
 
-            if c_h is not None and s_h is not None:
-                p = Point3(r * c_h, r * s_h, z)
-                i_p = Point3(i_r * c_h, i_r * s_h, i_z)
-            else:
+            if c_h is None and s_h is None:
                 p = Point3(r, 0., z)
                 i_p = Point3(i_r, 0., i_z)
+            else:
+                p = Point3(r * c_h, r * s_h, z)
+                i_p = Point3(i_r * c_h, i_r * s_h, i_z)
 
             inner_verts.append(i_p)
             seg_vecs.append((p - i_p) / self.segs_sc)
@@ -393,10 +403,10 @@ class Sphere(ProceduralGeometry):
             r = self.radius * math.sin(angle_v)
             z = self.radius * c
 
-            if c_h is not None and s_h is not None:
-                p = Point3(r * c_h, r * s_h, z)
-            else:
+            if c_h is None and s_h is None:
                 p = Point3(r, 0., z)
+            else:
+                p = Point3(r * c_h, r * s_h, z)
 
             seg_vecs.append((p - vertex) / self.segs_sc)
 
@@ -457,7 +467,6 @@ class Sphere(ProceduralGeometry):
                     vertex = inner_verts[-1]
                     v = .5 + .5 * vertex.z / self.radius
                     uv = Vec2(.5, v)
-
                     vdata_values.extend([*vertex, *self.color, *normal, *uv])
                     vertex_cnt += 1
 
@@ -470,7 +479,8 @@ class Sphere(ProceduralGeometry):
                 vertex_cnt += 1
 
             for i in range(self.segs_sc):
-                n = 0
+                # cnt will be incremented when self.bottom_clip > -1 and self.top_clip < 1.
+                cnt = 0
 
                 # Define the lower central vertices of the slice cap.
                 if self.bottom_clip > -1.:
@@ -480,7 +490,7 @@ class Sphere(ProceduralGeometry):
 
                     vdata_values.extend([*vertex, *self.color, *normal, *uv])
                     vertex_cnt += 1
-                    n += 1
+                    cnt += 1
 
                 # Define the main vertices of the slice cap quads.
                 _idx = 1 if self.bottom_clip > -1. else 0
@@ -494,6 +504,7 @@ class Sphere(ProceduralGeometry):
                     u = dividend / self.radius * -direction
                     v = .5 + .5 * vertex.z / self.radius
                     uv = Vec2(u, v)
+
                     vdata_values.extend([*vertex, *self.color, *normal, *uv])
                     vertex_cnt += 1
 
@@ -506,11 +517,11 @@ class Sphere(ProceduralGeometry):
 
                     vdata_values.extend([*vertex, *self.color, *normal, *uv])
                     vertex_cnt += 1
-                    n += 1
+                    cnt += 1
 
                 # Define the vertex order of the slice cap triangles.
                 if i == 0 and not self.inner_radius:
-                    for j in range(self.segs_v + n):
+                    for j in range(self.segs_v + cnt):
                         vi1 = index_offset
                         vi2 = vi1 + j + 1
                         vi3 = vi2 + 1
@@ -521,10 +532,10 @@ class Sphere(ProceduralGeometry):
                             prim_indices.extend((vi1, vi3, vi2) if self.invert else (vi1, vi2, vi3))
                 # Define the vertex order of the slice cap quads.
                 else:
+                    n = cnt + (0 if self.inner_radius else 1)
                     start = 0 if self.inner_radius else 1
-                    end = self.segs_v + n + (0 if self.inner_radius else 1)
 
-                    for j in range(start, end):
+                    for j in range(start, self.segs_v + n):
                         vi1 = index_offset + j
                         vi2 = vi1 - self.segs_v - n - (1 if self.inner_radius else 0)
                         vi3 = vi2 + 1
@@ -537,25 +548,36 @@ class Sphere(ProceduralGeometry):
                             prim_indices.extend((vi1, vi2, vi4) if self.invert else (vi1, vi4, vi2))
                             prim_indices.extend((vi2, vi3, vi4) if self.invert else (vi2, vi4, vi3))
 
-                index_offset += self.segs_v + 1 + n
+                index_offset += self.segs_v + cnt + 1
             total_vertex_cnt += vertex_cnt
 
         return total_vertex_cnt
 
     def define_variables(self):
-        self.bottom_height = self.radius * self.bottom_clip
         self.top_height = self.radius * self.top_clip
+        self.bottom_height = self.radius * self.bottom_clip
+
+        if self.inner_radius:
+            if (self.top_height - self.bottom_height) * 0.5 <= self.radius - self.inner_radius:
+                self.inner_radius = 0
+
         self.slice_rad = math.pi * self.slice_deg / 180.
         self.delta_angle_h = math.pi * ((360 - self.slice_deg) / 180) / self.segs_h
-        self.bottom_angle = math.pi - math.acos(self.bottom_height / self.radius)
-        self.top_angle = math.acos(self.top_height / self.radius)
+
+        # Use np.clip to prevent ValueError: math domain error raised from math.acos.
+        x = np.clip(self.bottom_height / self.radius, -1.0, 1.0)
+        self.bottom_angle = math.pi - math.acos(x)
+        # self.bottom_angle = math.pi - math.acos(self.bottom_height / self.radius)
+        x = np.clip(self.top_height / self.radius, -1.0, 1.0)
+        self.top_angle = math.acos(x)
+        # self.top_angle = math.acos(self.top_height / self.radius)
+
         self.delta_angle_v = (math.pi - self.bottom_angle - self.top_angle) / self.segs_v
         self.thickness = self.radius - self.inner_radius
 
     def get_geom_node(self):
         # Calculate required values to define variables.
         self.define_variables()
-
         vdata_values = array.array('f', [])
         prim_indices = array.array('H', [])
         vertex_cnt = 0
@@ -566,7 +588,8 @@ class Sphere(ProceduralGeometry):
         vertex_cnt += self.create_top(vertex_cnt, vdata_values, prim_indices)
 
         # Create slice caps.
-        if self.segs_sc and self.slice_deg and self.inner_radius:
+        # if self.segs_sc and self.slice_deg and self.inner_radius:
+        if self.segs_sc and self.slice_deg and self.thickness:
             vertex_cnt += self.create_slice_cap(vertex_cnt, vdata_values, prim_indices)
 
         # Make geom node of the outer sphere.
@@ -605,105 +628,6 @@ class Sphere(ProceduralGeometry):
         return geom_node
 
 
-# class Sphere(ProceduralGeometry):
-#     """Create a sphere model.
-#        Args:
-#             radius (int): the radius of sphere;
-#             segs_s (int): the number of surface subdivisions;
-#     """
-
-#     def __init__(self, radius=1.5, segs_s=40):
-#         super().__init__()
-#         self.radius = radius
-#         self.segs_s = segs_s
-#         self.color = (1, 1, 1, 1)
-
-#     def create_bottom_pole(self, vdata_values, prim_indices):
-#         # the bottom pole vertices
-#         normal = Vec3(0.0, 0.0, -1.0)
-#         vertex = Point3(0.0, 0.0, -self.radius)
-
-#         for i in range(self.segs_s):
-#             u = i / self.segs_s
-#             vdata_values.extend(vertex)
-#             vdata_values.extend(self.color)
-#             vdata_values.extend(normal)
-#             vdata_values.extend((u, 0.0))
-
-#             # the vertex order of the pole vertices
-#             prim_indices.extend((i, i + self.segs_s + 1, i + self.segs_s))
-
-#         return self.segs_s
-
-#     def create_quads(self, index_offset, vdata_values, prim_indices):
-#         delta_angle = 2 * math.pi / self.segs_s
-#         vertex_cnt = 0
-
-#         # the quad vertices
-#         for i in range((self.segs_s - 2) // 2):
-#             angle_v = delta_angle * (i + 1)
-#             radius_h = self.radius * math.sin(angle_v)
-#             z = self.radius * -math.cos(angle_v)
-#             v = 2.0 * (i + 1) / self.segs_s
-
-#             for j in range(self.segs_s + 1):
-#                 angle = delta_angle * j
-#                 c = math.cos(angle)
-#                 s = math.sin(angle)
-#                 x = radius_h * c
-#                 y = radius_h * s
-#                 normal = Vec3(x, y, z).normalized()
-#                 u = j / self.segs_s
-
-#                 vdata_values.extend((x, y, z))
-#                 vdata_values.extend(self.color)
-#                 vdata_values.extend(normal)
-#                 vdata_values.extend((u, v))
-
-#                 # the vertex order of the quad vertices
-#                 if i > 0 and j <= self.segs_s:
-#                     px = i * (self.segs_s + 1) + j + index_offset
-#                     prim_indices.extend((px, px - self.segs_s - 1, px - self.segs_s))
-#                     prim_indices.extend((px, px - self.segs_s, px + 1))
-
-#             vertex_cnt += self.segs_s + 1
-
-#         return vertex_cnt
-
-#     def create_top_pole(self, index_offset, vdata_values, prim_indices):
-#         vertex = Point3(0.0, 0.0, self.radius)
-#         normal = Vec3(0.0, 0.0, 1.0)
-
-#         # the top pole vertices
-#         for i in range(self.segs_s):
-#             u = i / self.segs_s
-#             vdata_values.extend(vertex)
-#             vdata_values.extend(self.color)
-#             vdata_values.extend(normal)
-#             vdata_values.extend((u, 1.0))
-
-#             # the vertex order of the top pole vertices
-#             x = i + index_offset
-#             prim_indices.extend((x, x + 1, x + self.segs_s + 1))
-
-#         return self.segs_s
-
-#     def get_geom_node(self):
-#         vdata_values = array.array('f', [])
-#         prim_indices = array.array('H', [])
-#         vertex_cnt = 0
-
-#         # create vertices of the bottom pole, quads, and top pole
-#         vertex_cnt += self.create_bottom_pole(vdata_values, prim_indices)
-#         vertex_cnt += self.create_quads(vertex_cnt, vdata_values, prim_indices)
-#         vertex_cnt += self.create_top_pole(vertex_cnt - self.segs_s - 1, vdata_values, prim_indices)
-
-#         geom_node = self.create_geom_node(
-#             vertex_cnt, vdata_values, prim_indices, 'sphere')
-
-#         return geom_node
-
-
 class QuickSphere(ProceduralGeometry):
     """Create a sphere model from icosahedron quickly.
         Arges:
@@ -738,33 +662,41 @@ class QuickSphere(ProceduralGeometry):
                 yield from self.subdivide(face, divnum + 1)
             yield from self.subdivide(midpoints, divnum + 1)
 
-    def load_obj(self, file_path):
-        vertices = []
-        faces = []
+    def load_obj(self):
+        vertices = [
+            [-0.52573111, -0.72360680, 0.44721360],
+            [-0.85065081, 0.27639320, 0.44721360],
+            [-0.00000000, 0.89442719, 0.44721360],
+            [0.85065081, 0.27639320, 0.44721360],
+            [0.52573111, -0.72360680, 0.44721360],
+            [0.00000000, -0.89442719, -0.44721360],
+            [-0.85065081, -0.27639320, -0.44721360],
+            [-0.52573111, 0.72360680, -0.44721360],
+            [0.52573111, 0.72360680, -0.44721360],
+            [0.85065081, -0.27639320, -0.44721360],
+            [0.00000000, 0.00000000, 1.00000000],
+            [-0.00000000, 0.00000000, -1.00000000]
+        ]
 
-        with open(file_path, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-                li = [val for val in line.split(' ') if val]
-
-                match li[0]:
-                    case 'v':
-                        vertices.append(tuple(float(val) for val in li[1:]))
-
-                    case 'f':
-                        faces.append(tuple(int(val) - 1 for val in li[1:]))
+        faces = [
+            [0, 1, 6], [0, 6, 5], [0, 5, 4], [0, 4, 10],
+            [0, 10, 1], [1, 2, 7], [1, 7, 6], [1, 10, 2],
+            [2, 3, 8], [2, 8, 7], [2, 10, 3], [3, 4, 9],
+            [3, 9, 8], [3, 10, 4], [4, 5, 9], [5, 6, 11],
+            [5, 11, 9], [6, 7, 11], [7, 8, 11], [8, 9, 11]
+        ]
 
         return vertices, faces
 
     def get_geom_node(self):
-        vertices, faces = self.load_obj('src/objs/icosahedron.obj')
+        vertices, faces = self.load_obj()
         vertex_cnt = 4 ** self.divnum * 20 * 3
         vdata_values = array.array('f', [])
         prim_indices = array.array('H', [])
         start = 0
 
         for face in faces:
-            face_verts = [Vec3(vertices[n]) for n in face]
+            face_verts = [Vec3(*vertices[n]) for n in face]
             for subdiv_face in self.subdivide(face_verts):
                 for vert in subdiv_face:
                     normal = vert.normalized()

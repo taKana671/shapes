@@ -270,7 +270,7 @@ class Torus(ProceduralGeometry):
         vertex_cnt = 0
 
         # Create an outer torus.
-        vertex_cnt += self.create_mantle(vdata_values, prim_indices, self.invert)
+        vertex_cnt += self.create_mantle(vdata_values, prim_indices)
 
         if self.ring_slice_deg:
             vertex_cnt += self.create_ring_cap(vertex_cnt, vdata_values, prim_indices)
@@ -283,10 +283,10 @@ class Torus(ProceduralGeometry):
             vertex_cnt, vdata_values, prim_indices, 'torus')
 
         # Create an inner torus mantle.
-        if self.thickness:
+        if self.section_inner_radius:
             vdata_values = array.array('f', [])
             prim_indices = array.array('H', [])
-            vertex_cnt = self.create_mantle(vdata_values, prim_indices, not self.invert)
+            vertex_cnt = self.create_mantle(vdata_values, prim_indices, outer=False)
 
             # Connect the inner torus mantle to the outer torus.
             self.add(geom_node, vdata_values, vertex_cnt, prim_indices)

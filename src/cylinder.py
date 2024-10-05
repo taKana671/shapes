@@ -284,7 +284,7 @@ class Cylinder(ProceduralGeometry):
             vertex_cnt, vdata_values, prim_indices, 'cylinder')
 
         # Create an inner cylinder mantle.
-        if self.thickness:
+        if self.inner_radius:
             vdata_values = array.array('f', [])
             prim_indices = array.array('H', [])
             vertex_cnt = self.create_mantle_quads(

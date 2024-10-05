@@ -15,7 +15,8 @@ from direct.gui.DirectGui import DirectEntry, DirectFrame, DirectLabel, DirectBu
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
 
-from src import Cylinder, Sphere, Torus, Cone, Plane, Cube
+from src import Cylinder, Sphere, Torus, Cone, Plane, Cube, QuickSphere
+from src.validation import validate
 
 
 load_prc_file_data("", """
@@ -75,8 +76,9 @@ class ModelDisplay(ShowBase):
         self.gui_aspect2d = self.create_gui_region()
         self.gui = Gui(self.gui_aspect2d)
 
-        # self.model_cls = Cone
-        self.model_cls = Sphere
+        self.model_cls = Cone
+        # self.model_cls = Sphere
+        # self.model_cls = QuickSphere
         model_maker = self.model_cls()
         self.gui.set_default_values(model_maker)
 
@@ -326,7 +328,10 @@ class ModelDisplay(ShowBase):
             for label, entry in self.gui.entries.items():
                 if not (label_txt := label['text']):
                     break
-                params[label_txt] = self.get_input_value(label_txt, entry.get())
+
+                input_value = self.get_input_value(label_txt, entry.get())
+                validate(label_txt, input_value)
+                params[label_txt] = input_value
 
             new_model = self.model_cls(**params).create()
 

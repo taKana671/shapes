@@ -13,15 +13,15 @@ class Cone(ProceduralGeometry):
         height (float): height of the cone
         segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3
         segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1
-        bottom_cap (int): radial subdivisions of the bottom cap; 0 means no cap
-        top_cap(int): radial subdivisions of the top cap; 0 means no cap
+        bottom_cap (int): radial subdivisions of the bottom cap; 0 (no cap)
+        top_cap(int): radial subdivisions of the top cap; 0 (no cap)
         slice_deg (float): the angle of the pie slice removed from the cone, in degrees
         bottom_radius (float): the bottom radius of the cone; cannot be negative
         top_radius (float): the top radius of the cone; cannot be negative
         bottom_inner_radius (float): the bottom inner radius of the cone; cannot be negative
         top_inner_radius (float): the top inner radius of the cone; cannot be negative
-        slice_caps_radial (int): subdivisions of both slice caps, along the radius
-        slice_caps_axisal (int): subdivisions of both slice caps, along the axis of rotation
+        slice_caps_radial (int): subdivisions of both slice caps, along the radius; 0 (no cap)
+        slice_caps_axisal (int): subdivisions of both slice caps, along the axis of rotation; 0 (no cap)
         invert (bool): whether or not the geometry should be rendered inside-out; default is False
     """
 
@@ -332,7 +332,7 @@ class Cone(ProceduralGeometry):
             vertex_cnt, vdata_values, prim_indices, 'cone')
 
         # Create an inner cone mantle.
-        if self.bottom_thickness or self.top_thickness:
+        if self.bottom_inner_radius or self.top_inner_radius:
             vdata_values = array.array('f', [])
             prim_indices = array.array('H', [])
             vertex_cnt = self.create_mantle_quads(0, vdata_values, prim_indices, outer=False)

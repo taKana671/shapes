@@ -3,8 +3,6 @@ from panda3d.core import Geom, GeomNode, GeomTriangles
 from panda3d.core import Mat4, Vec3
 from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexArrayFormat
 
-from .validation import validate
-
 
 class ProceduralGeometry:
 
@@ -15,14 +13,6 @@ class ProceduralGeometry:
         super().__init_subclass__()
         if 'get_geom_node' not in cls.__dict__:
             raise NotImplementedError('Subclasses must override get_geom_node method.')
-
-    def __setattr__(self, name, value):
-        try:
-            validate(name, value)
-        except ValueError:
-            raise
-        else:
-            super().__setattr__(name, value)
 
     def create(self):
         geom_node = self.get_geom_node()
