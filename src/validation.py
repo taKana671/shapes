@@ -27,7 +27,7 @@ def validate(name, value):
                 return
             msg = 'must be integer. minimum is 2'
 
-        case '^segs_[awdh]$':
+        case '^segs_[awdz]$':
             if type(value) is int and value >= 1:
                 return
             msg = 'must be integer. minimum is 1'
@@ -63,7 +63,7 @@ def validate(name, value):
                 return
             msg = 'inner radius must be in the range from 0 to radius'
 
-        case '^invert$':
+        case '^invert$' | '^open_':
             if isinstance(value, bool):
                 return
             msg = 'must be bool'

@@ -15,7 +15,7 @@ from direct.gui.DirectGui import DirectEntry, DirectFrame, DirectLabel, DirectBu
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
 
-from src import Cylinder, Sphere, Torus, Cone, Plane, Cube, QuickSphere
+from src import Cylinder, Sphere, Torus, Cone, Plane, Box, QuickSphere
 from src.validation import validate
 
 
@@ -76,9 +76,9 @@ class ModelDisplay(ShowBase):
         self.gui_aspect2d = self.create_gui_region()
         self.gui = Gui(self.gui_aspect2d)
 
-        self.model_cls = Cone
+        # self.model_cls = Cone
         # self.model_cls = Sphere
-        # self.model_cls = QuickSphere
+        self.model_cls = Box
         model_maker = self.model_cls()
         self.gui.set_default_values(model_maker)
 
@@ -106,7 +106,7 @@ class ModelDisplay(ShowBase):
         self.model = model
         self.model.set_pos_hpr_scale(Point3(0, 0, 0), hpr, scale)
 
-        # self.model.set_texture(self.loader.load_texture('board.jpg'))
+        # self.model.set_texture(self.loader.load_texture('brick.jpg'))
 
         self.model.set_color(LColor(1, 0, 0, 1))
         self.model.reparent_to(self.render)
@@ -311,8 +311,8 @@ class ModelDisplay(ShowBase):
                 self.model_cls = Torus
             case Sphere.__name__:
                 self.model_cls = Sphere
-            case Cube.__name__:
-                self.model_cls = Cube
+            case Box.__name__:
+                self.model_cls = Box
             case Plane.__name__:
                 self.model_cls = Plane
 
@@ -428,7 +428,7 @@ class Gui(DirectFrame):
         return z
 
     def set_default_values(self, instance):
-        exclude = ('bottom_center', 'top_center', 'fmt', 'color', 'stride')
+        exclude = ('bottom_center', 'top_center', 'center', 'fmt', 'color', 'stride')
         keys = [k for k in instance.__dict__.keys() if k not in exclude]
         key_cnt = len(keys)
 
