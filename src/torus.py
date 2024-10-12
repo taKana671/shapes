@@ -46,16 +46,16 @@ class Torus(ProceduralGeometry):
         self.invert = invert
         self.color = (1, 1, 1, 1)
 
-    def create_mantle(self, vdata_values, prim_indices, outer=True):
-        invert = self.invert
-        section_radius = self.section_radius
+    def create_mantle(self, vdata_values, prim_indices):
+        # invert = self.invert
+        # section_radius = self.section_radius
 
-        if not outer:
-            invert = not self.invert
-            section_radius = self.section_inner_radius
+        # if not outer:
+        #     invert = not self.invert
+        #     section_radius = self.section_inner_radius
 
-        n = 0 if invert else self.ring_slice_rad
-        direction = -1 if invert else 1
+        n = 0 if self.invert else self.ring_slice_rad
+        direction = -1 if self.invert else 1
         vertex_cnt = 0
 
         # mantle quad vertices
@@ -67,10 +67,10 @@ class Torus(ProceduralGeometry):
 
             for j in range(self.segs_s + 1):
                 angle_v = self.delta_angle_v * j + self.section_slice_rad
-                r = self.ring_radius - section_radius * math.cos(angle_v)
+                r = self.ring_radius - self.section_radius * math.cos(angle_v)
                 x = r * c
                 y = r * s
-                z = section_radius * math.sin(angle_v)
+                z = self.section_radius * math.sin(angle_v)
                 nx = x - self.ring_radius * c
                 ny = y - self.ring_radius * s
 
@@ -90,8 +90,8 @@ class Torus(ProceduralGeometry):
                 vi2 = vi1 - n
                 vi3 = vi2 + 1
                 vi4 = vi1 + 1
-                prim_indices.extend((vi1, vi2, vi4) if invert else (vi1, vi2, vi3))
-                prim_indices.extend((vi2, vi3, vi4) if invert else (vi1, vi3, vi4))
+                prim_indices.extend((vi1, vi2, vi4) if self.invert else (vi1, vi2, vi3))
+                prim_indices.extend((vi2, vi3, vi4) if self.invert else (vi1, vi3, vi4))
 
         return vertex_cnt
 
@@ -278,17 +278,16 @@ class Torus(ProceduralGeometry):
         if self.section_slice_deg:
             vertex_cnt += self.create_section_cap(vertex_cnt, vdata_values, prim_indices)
 
-        # Create the outer torus geom.
+        # Create an inner torus mantle to connect it to the outer torus.
+        if self.section_inner_radius:
+            torus_maker = Torus(self.segs_r, self.segs_s, self.ring_radius, self.section_inner_radius, 0,
+                                self.ring_slice_deg, self.section_slice_deg, 0, 0, 0, 0, not self.invert)
+
+            geom_node = torus_maker.get_geom_node()
+            self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
+            return geom_node
+
+        # Create the geom node.
         geom_node = self.create_geom_node(
             vertex_cnt, vdata_values, prim_indices, 'torus')
-
-        # Create an inner torus mantle.
-        if self.section_inner_radius:
-            vdata_values = array.array('f', [])
-            prim_indices = array.array('H', [])
-            vertex_cnt = self.create_mantle(vdata_values, prim_indices, outer=False)
-
-            # Connect the inner torus mantle to the outer torus.
-            self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
-
         return geom_node

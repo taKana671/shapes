@@ -12,7 +12,7 @@ class Sphere(ProceduralGeometry):
     """Create a sphere model.
        Args:
             radius (float): the radius of sphere; more than 0;
-            inner_radius (float): the radius of the sphere; cannot be negative; must be in [0., radius]
+            inner_radius (float): the radius of the inner sphere; cannot be negative; must be in [0., radius]
             segs_h(int): subdivisions along horizontal circles; minimum = 3
             segs_v (int): subdivisions along vertical semicircles; minimum = 2
             segs_bottom_cap (int): radial subdivisions of the bottom clipping cap; minimum = 0 (no cap)
@@ -226,7 +226,7 @@ class Sphere(ProceduralGeometry):
         )
 
         if self.bottom_clip > -1:
-            if self.segs_bc:  # and -self.radius < z < self.radius: ←バリデーションするので、この条件はいらない。
+            if self.segs_bc:
                 vertex_cnt += self.create_bottom_cap_triangles(vdata_values, prim_indices, cap)
                 vertex_cnt += self.create_bottom_cap_quads(vertex_cnt, vdata_values, prim_indices, cap)
                 index_offset += vertex_cnt
@@ -350,14 +350,10 @@ class Sphere(ProceduralGeometry):
 
     def get_hollow_cap_inner_vertices(self, seg_vecs, inner_verts, c_h=None, s_h=None):
         inner_bottom_height = self.bottom_height + self.thickness
-        x = np.clip(inner_bottom_height / self.inner_radius, -1.0, 1.0)
-        inner_bottom_angle = math.pi - math.acos(x)
-        # inner_bottom_angle = math.pi - math.acos(inner_bottom_height / self.inner_radius)
+        inner_bottom_angle = math.pi - math.acos(np.clip(inner_bottom_height / self.inner_radius, -1.0, 1.0))
 
         inner_top_height = self.top_height - self.thickness
-        x = np.clip(inner_top_height / self.inner_radius, -1.0, 1.0)
-        inner_top_angle = math.acos(x)
-        # inner_top_angle = math.acos(inner_top_height / self.inner_radius)
+        inner_top_angle = math.acos(np.clip(inner_top_height / self.inner_radius, -1.0, 1.0))
         inner_delta_angle_v = (math.pi - inner_bottom_angle - inner_top_angle) / self.segs_v
 
         if self.bottom_clip > -1.:
@@ -435,10 +431,7 @@ class Sphere(ProceduralGeometry):
 
             if self.inner_radius:
                 self.get_hollow_cap_inner_vertices(seg_vecs, inner_verts, c_h, s_h)
-            else:
-                self.get_closed_cap_inner_vertices(seg_vecs, inner_verts, c_h, s_h)
 
-            if self.inner_radius:
                 # Define the lower inner central vertex of the slice cap.
                 if self.bottom_clip > -1.:
                     vertex = inner_verts[0]
@@ -472,6 +465,8 @@ class Sphere(ProceduralGeometry):
 
                 index_offset += vertex_cnt
             else:
+                self.get_closed_cap_inner_vertices(seg_vecs, inner_verts, c_h, s_h)
+
                 vertex = inner_verts[0]
                 v = .5 + .5 * vertex.z / self.radius
                 uv = Vec2(.5, v)
@@ -479,7 +474,7 @@ class Sphere(ProceduralGeometry):
                 vertex_cnt += 1
 
             for i in range(self.segs_sc):
-                # cnt will be incremented when self.bottom_clip > -1 and self.top_clip < 1.
+                # will be incremented when self.bottom_clip > -1 and self.top_clip < 1.
                 cnt = 0
 
                 # Define the lower central vertices of the slice cap.
@@ -561,23 +556,19 @@ class Sphere(ProceduralGeometry):
             if (self.top_height - self.bottom_height) * 0.5 <= self.radius - self.inner_radius:
                 self.inner_radius = 0
 
+        self.thickness = self.radius - self.inner_radius
         self.slice_rad = math.pi * self.slice_deg / 180.
         self.delta_angle_h = math.pi * ((360 - self.slice_deg) / 180) / self.segs_h
 
         # Use np.clip to prevent ValueError: math domain error raised from math.acos.
-        x = np.clip(self.bottom_height / self.radius, -1.0, 1.0)
-        self.bottom_angle = math.pi - math.acos(x)
-        # self.bottom_angle = math.pi - math.acos(self.bottom_height / self.radius)
-        x = np.clip(self.top_height / self.radius, -1.0, 1.0)
-        self.top_angle = math.acos(x)
-        # self.top_angle = math.acos(self.top_height / self.radius)
-
+        self.bottom_angle = math.pi - math.acos(np.clip(self.bottom_height / self.radius, -1.0, 1.0))
+        self.top_angle = math.acos(np.clip(self.top_height / self.radius, -1.0, 1.0))
         self.delta_angle_v = (math.pi - self.bottom_angle - self.top_angle) / self.segs_v
-        self.thickness = self.radius - self.inner_radius
 
     def get_geom_node(self):
         # Calculate required values to define variables.
         self.define_variables()
+
         vdata_values = array.array('f', [])
         prim_indices = array.array('H', [])
         vertex_cnt = 0
@@ -587,44 +578,25 @@ class Sphere(ProceduralGeometry):
         vertex_cnt += self.create_mantle_quads(index_offset, vdata_values, prim_indices)
         vertex_cnt += self.create_top(vertex_cnt, vdata_values, prim_indices)
 
-        # Create slice caps.
-        # if self.segs_sc and self.slice_deg and self.inner_radius:
-        if self.segs_sc and self.slice_deg and self.thickness:
+        if self.segs_sc and self.slice_deg:
             vertex_cnt += self.create_slice_cap(vertex_cnt, vdata_values, prim_indices)
 
-        # Make geom node of the outer sphere.
+        # Create a geom node of the inner sphere to connect it to the outer sphere.
+        if self.inner_radius > 0:
+            bottom_clip = (self.bottom_height + self.thickness) / self.inner_radius
+            top_clip = (self.top_height - self.thickness) / self.inner_radius
+
+            sphere_maker = Sphere(self.inner_radius, 0, self.segs_h, self.segs_v,
+                                  self.segs_bc, self.segs_tc, 0,
+                                  self.slice_deg, bottom_clip, top_clip, not self.invert)
+
+            geom_node = sphere_maker.get_geom_node()
+            self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
+            return geom_node
+
+        # Create the geom node.
         geom_node = self.create_geom_node(
             vertex_cnt, vdata_values, prim_indices, 'sphere')
-
-        if self.inner_radius:
-            # Backup variables to be changed.
-            backup_keys = ['radius', 'inner_radius', 'bottom_clip', 'top_clip', 'invert']
-            backup = {k: self.__dict__[k] for k in backup_keys}
-
-            # Change variables.
-            self.bottom_clip = (self.bottom_height + self.thickness) / self.inner_radius
-            self.top_clip = (self.top_height - self.thickness) / self.inner_radius
-            self.radius = self.inner_radius
-            self.inner_radius = 0
-            self.invert = not self.invert
-
-            # Recalculate required values.
-            self.define_variables()
-            vdata_values = array.array('f', [])
-            prim_indices = array.array('H', [])
-
-            # Create an inner sphere.
-            vertex_cnt, index_offset = self.create_bottom(0, vdata_values, prim_indices)
-            vertex_cnt += self.create_mantle_quads(index_offset, vdata_values, prim_indices)
-            vertex_cnt += self.create_top(vertex_cnt, vdata_values, prim_indices)
-
-            # Connect the inner sphere to the outer sphere.
-            self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
-
-            # Restore variables.
-            for k, v in backup.items():
-                self.__dict__[k] = v
-
         return geom_node
 
 

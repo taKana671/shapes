@@ -73,10 +73,10 @@ def validate(name, value):
                 return
             msg = 'must be greater than 0'
 
-        # case '^bottom_clip$':
-        #     if -1 <= value <= 1:
-        #         return
-        #     msg = 'must be -1 <= bottom_clip <= 1'
+        case '_clip$':
+            if -1 <= value <= 1:
+                return
+            msg = f'must be -1 <= {name} <= 1'
 
     if msg:
         raise ValueError(f'{name}: {msg}.')

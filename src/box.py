@@ -233,21 +233,21 @@ class Box(ProceduralGeometry):
 
         vertex_cnt += self.create_sides(vdata_values, prim_indices)
 
+        # Create the inner box to connect it to the outer box.
         if self.thickness > 0:
-            box_maker = Cube(*self.inner_dims.values(), *self.segs.values(), 0,
-                             not self.invert, *self.open_sides.values())
+            box_maker = Box(*self.inner_dims.values(), *self.segs.values(), 0,
+                            not self.invert, *self.open_sides.values())
 
             # Define the inner box center.
             pts = [(self.inner_corners[f'-{s}'] - self.inner_corners[s]) for s in 'xyz']
             inner_center = Point3(*pts) * 0.5
             box_maker.center = inner_center + self.center
 
-            # Create a geom node of the inner box to connect it to the outer box.
             geom_node = box_maker.get_geom_node()
             self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
             return geom_node
 
-        # If thickness is zero, create only the outer box geom node.
+        # Create the geom node.
         geom_node = self.create_geom_node(
             vertex_cnt, vdata_values, prim_indices, 'box')
 

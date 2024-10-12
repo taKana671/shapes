@@ -137,9 +137,8 @@ class Cylinder(ProceduralGeometry):
 
         return vertex_cnt
 
-    def create_mantle_quads(self, index_offset, vdata_values, prim_indices, invert, outer=True):
-        radius = self.radius if outer else self.inner_radius
-        direction = -1 if invert else 1
+    def create_mantle_quads(self, index_offset, vdata_values, prim_indices):
+        direction = -1 if self.invert else 1
         vertex_cnt = 0
 
         # mantle quad vertices
@@ -148,9 +147,9 @@ class Cylinder(ProceduralGeometry):
             v = i / self.segs_a
 
             for j in range(self.segs_c + 1):
-                angle = self.delta_rad * j + (0 if invert else self.slice_rad)
-                x = radius * math.cos(angle)
-                y = radius * math.sin(angle) * direction
+                angle = self.delta_rad * j + (0 if self.invert else self.slice_rad)
+                x = self.radius * math.cos(angle)
+                y = self.radius * math.sin(angle) * direction
                 vertex = Point3(x, y, z)
 
                 normal = Vec3(x, y, 0.0).normalized() * direction
@@ -170,8 +169,8 @@ class Cylinder(ProceduralGeometry):
                 vi3 = vi2 + 1
                 vi4 = vi1 + 1
 
-                prim_indices.extend((vi1, vi2, vi4) if invert else (vi1, vi2, vi3))
-                prim_indices.extend((vi2, vi3, vi4) if invert else (vi1, vi3, vi4))
+                prim_indices.extend((vi1, vi2, vi4) if self.invert else (vi1, vi2, vi3))
+                prim_indices.extend((vi2, vi3, vi4) if self.invert else (vi1, vi3, vi4))
 
         return vertex_cnt
 
@@ -269,7 +268,7 @@ class Cylinder(ProceduralGeometry):
             vertex_cnt += self.create_bottom_cap_triangles(vdata_values, prim_indices)
             vertex_cnt += self.create_bottom_cap_quads(vdata_values, prim_indices)
 
-        vertex_cnt += self.create_mantle_quads(vertex_cnt, vdata_values, prim_indices, self.invert)
+        vertex_cnt += self.create_mantle_quads(vertex_cnt, vdata_values, prim_indices)
 
         if self.segs_tc:
             sub_total = vertex_cnt
@@ -279,18 +278,16 @@ class Cylinder(ProceduralGeometry):
         if self.ring_slice_deg and self.segs_sc_r and self.segs_sc_a:
             vertex_cnt += self.create_slice_cap_quads(vertex_cnt, vdata_values, prim_indices)
 
-        # Create the outer cylinder geom.
+        # Create an inner cylinder to connect it to the outer cylinder.
+        if self.inner_radius:
+            cylinder_maker = Cylinder(self.inner_radius, 0, self.height, self.segs_c, self.segs_a,
+                                      0, 0, self.ring_slice_deg, 0, 0, not self.invert)
+
+            geom_node = cylinder_maker.get_geom_node()
+            self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
+            return geom_node
+
+        # Create the geom node.
         geom_node = self.create_geom_node(
             vertex_cnt, vdata_values, prim_indices, 'cylinder')
-
-        # Create an inner cylinder mantle.
-        if self.inner_radius:
-            vdata_values = array.array('f', [])
-            prim_indices = array.array('H', [])
-            vertex_cnt = self.create_mantle_quads(
-                0, vdata_values, prim_indices, not self.invert, outer=False)
-
-            # Connect the inner cylinder mantle to outer cylinder.
-            self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
-
         return geom_node

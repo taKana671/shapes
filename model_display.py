@@ -15,7 +15,7 @@ from direct.gui.DirectGui import DirectEntry, DirectFrame, DirectLabel, DirectBu
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
 
-from src import Cylinder, Sphere, Torus, Cone, Plane, Box, QuickSphere
+from src import Cylinder, Sphere, Torus, Cone, Plane, Box
 from src.validation import validate
 
 
@@ -76,9 +76,7 @@ class ModelDisplay(ShowBase):
         self.gui_aspect2d = self.create_gui_region()
         self.gui = Gui(self.gui_aspect2d)
 
-        # self.model_cls = Cone
-        # self.model_cls = Sphere
-        self.model_cls = Box
+        self.model_cls = Cone
         model_maker = self.model_cls()
         self.gui.set_default_values(model_maker)
 
@@ -105,11 +103,13 @@ class ModelDisplay(ShowBase):
 
         self.model = model
         self.model.set_pos_hpr_scale(Point3(0, 0, 0), hpr, scale)
-
         # self.model.set_texture(self.loader.load_texture('brick.jpg'))
-
         self.model.set_color(LColor(1, 0, 0, 1))
         self.model.reparent_to(self.render)
+
+        # self.model = self.loader.load_model('torus_20241012130437.bam')
+        # self.model.reparent_to(self.render)
+        # self.model.set_texture(self.loader.load_texture('brick.jpg'))
 
         if self.show_wireframe:
             self.model.set_render_mode_wireframe()
@@ -391,10 +391,26 @@ class Gui(DirectFrame):
             relief=DGG.SUNKEN,
             borderWidth=(0.01, 0.01)
         )
-
         self.initialiseoptions(type(self))
         self.set_transparency(TransparencyAttrib.MAlpha)
         self.create_gui()
+
+        base.accept('tab', self.change_focus, [True])
+        base.accept('shift-tab', self.change_focus, [False])
+
+    def change_focus(self, go_down):
+        entries = list(self.entries.values())
+
+        for i, entry in enumerate(entries):
+            if entry['focus']:
+                if go_down:
+                    next_idx = i + 1 if i < len(self.entries) - 1 else 0
+                else:
+                    next_idx = len(self.entries) - 1 if i == 0 else i - 1
+
+                entry['focus'] = 0
+                entries[next_idx]['focus'] = 1
+                break
 
     def create_gui(self):
         last_z = self.create_edit_boxes(0.88)
@@ -402,7 +418,7 @@ class Gui(DirectFrame):
         self.create_model_type_btns(last_z - 0.15)
 
     def create_model_type_btns(self, start_z):
-        class_names = ['cone', 'cylinder', 'torus', 'sphere', 'cube', 'plane']
+        class_names = ['cone', 'cylinder', 'torus', 'sphere', 'box', 'plane']
 
         for i, text in enumerate(class_names):
             q, mod = divmod(i, 3)
@@ -474,6 +490,9 @@ class Gui(DirectFrame):
                 initialText='',
             )
             self.entries[label] = entry
+
+            if i == 0:
+                entry['focus'] = 1
 
         return z
 

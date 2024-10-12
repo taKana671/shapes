@@ -15,7 +15,6 @@ class Plane(ProceduralGeometry):
             segs_d (int) the number of subdivisions in depth; positive integer
     """
 
-    # def __init__(self, width=256, depth=256, segs_w=16, segs_d=16):
     def __init__(self, width=1, depth=1, segs_w=2, segs_d=2):
         super().__init__()
         self.width = width

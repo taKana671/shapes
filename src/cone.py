@@ -123,34 +123,25 @@ class Cone(ProceduralGeometry):
 
         return vertex_cnt
 
-    def create_mantle_quads(self, index_offset, vdata_values, prim_indices, outer=True):
-        if outer:
-            invert = self.invert
-            bottom_radius = self.bottom_radius
-            top_radius = self.top_radius
-        else:
-            invert = not self.invert
-            bottom_radius = self.bottom_inner_radius
-            top_radius = self.top_inner_radius
-
-        direction = -1. if invert else 1.
-        delta_radius = top_radius - bottom_radius
+    def create_mantle_quads(self, index_offset, vdata_values, prim_indices):
+        direction = -1. if self.invert else 1.
+        delta_radius = self.top_radius - self.bottom_radius
         vertex_cnt = 0
 
         # the mantle quad vertices
         for i in range(self.segs_a + 1):
-            radius = bottom_radius + delta_radius * i / self.segs_a
+            radius = self.bottom_radius + delta_radius * i / self.segs_a
             z = self.height * i / self.segs_a
             v = i / self.segs_a
 
             for j in range(self.segs_c + 1):
-                angle = self.delta_rad * j + (0. if invert else self.slice_rad)
+                angle = self.delta_rad * j + (0. if self.invert else self.slice_rad)
                 x = radius * math.cos(angle)
                 y = radius * math.sin(angle) * direction
                 vertex = Point3(x, y, z)
 
                 # to prevent the normal from being (0, 0, 0)
-                _radius = bottom_radius + delta_radius * i / (self.segs_a + 1)
+                _radius = self.bottom_radius + delta_radius * i / (self.segs_a + 1)
                 normal = Vec3(x, y, -_radius * delta_radius / self.height).normalized()
                 normal *= direction
 
@@ -169,8 +160,8 @@ class Cone(ProceduralGeometry):
                 vi2 = vi1 - n
                 vi3 = vi2 + 1
                 vi4 = vi1 + 1
-                prim_indices.extend((vi1, vi2, vi4) if invert else (vi1, vi2, vi3))
-                prim_indices.extend((vi2, vi3, vi4) if invert else (vi1, vi3, vi4))
+                prim_indices.extend((vi1, vi2, vi4) if self.invert else (vi1, vi2, vi3))
+                prim_indices.extend((vi2, vi3, vi4) if self.invert else (vi1, vi3, vi4))
 
         return vertex_cnt
 
@@ -327,17 +318,17 @@ class Cone(ProceduralGeometry):
                 and (self.bottom_thickness or self.top_thickness):
             vertex_cnt += self.create_slice_cap(vertex_cnt, vdata_values, prim_indices)
 
-        # Create the outer cone geom.
+        # Create an inner cone to connect to the outer cone.
+        if self.bottom_inner_radius or self.top_inner_radius:
+            cone_maker = Cone(self.height, self.segs_c, self.segs_a, 0, 0, self.slice_deg,
+                              self.bottom_inner_radius, self.top_inner_radius, 0, 0,
+                              0, 0, not self.invert)
+
+            geom_node = cone_maker.get_geom_node()
+            self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
+            return geom_node
+
+        # Create the geom node.
         geom_node = self.create_geom_node(
             vertex_cnt, vdata_values, prim_indices, 'cone')
-
-        # Create an inner cone mantle.
-        if self.bottom_inner_radius or self.top_inner_radius:
-            vdata_values = array.array('f', [])
-            prim_indices = array.array('H', [])
-            vertex_cnt = self.create_mantle_quads(0, vdata_values, prim_indices, outer=False)
-
-            # Connect the inner cone mantle to outer cone.
-            self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
-
         return geom_node
