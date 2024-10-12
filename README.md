@@ -4,6 +4,8 @@ This repository provides the classes to procedurally make 3D shapes to be used i
 By changing parameter values, various kinds of rectangle, cone, cylinder, shape, torus and plane can be created.
 The simple editor, ModelDisplay, enables you to create such shape models while confirming their parameter values.
 
+https://github.com/user-attachments/assets/43e0ae50-9e07-4ac0-9047-57782b8ed7a5
+
 # Requirements
 * Panda3D 1.10.14
 * numpy 1.23.5
@@ -13,7 +15,7 @@ The simple editor, ModelDisplay, enables you to create such shape models while c
 * Windows11
 
 # Usage of class
-* There are 7 classes, Sphere, Box, Torus, Cone, Plane, QuickSphere, Plane.
+* There are 7 classes, including Sphere, Box, Torus, Cone, Plane, QuickSphere and Plane.
 * Instantiate and call create method.
 * Change parameter values as needed in instantiation.
 ```
