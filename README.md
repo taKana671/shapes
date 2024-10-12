@@ -1,7 +1,8 @@
 # shapes
 
-This repository provides the classes to procedurally make 3D shapes to be used in the games made with panda3D.
-By changing parameter values, various kinds of rectangle, cone, cylinder, shape, torus and plane can be created.
+Provides the classes to procedurally generate 3D shape models, which can be used when programming 3D games by panda3D. 
+In addition to the basic 3D shapes: box, cone, cylinder, sphere and torus, by changing parameter values, various kinds of 3D shapes can be created. 
+For example, changing the number of cone's bottom sides to 4 generates a square pyramid shape model.
 The simple editor, ModelDisplay, enables you to create such shape models while confirming their parameter values.
 
 https://github.com/user-attachments/assets/43e0ae50-9e07-4ac0-9047-57782b8ed7a5
