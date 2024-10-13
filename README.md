@@ -1,9 +1,10 @@
 # shapes
 
-Provides the classes to procedurally generate 3D shape models, which can be used when programming 3D games by panda3D. 
+Provides the classes to procedurally generate 3D shape models, which can be used when programming 3D games by panda3D.   
 In addition to the basic 3D shapes: box, cone, cylinder, sphere and torus, by changing parameter values, various kinds of 3D shapes can be created. 
-For example, changing the number of cone's bottom sides to 4 generates a square pyramid shape model.
-The simple editor, ModelDisplay, enables you to create such shape models while confirming their parameter values.
+For example, changing the number of cone's bottom sides to 4 generates a square pyramid shape model.  
+The simple editor, ModelDisplay, enables you to create such shape models while confirming their parameter values.  
+And this repositroy is also a submodule for [DeliveryCart](https://github.com/taKana671/DeliveryCart) and [MazeLand](https://github.com/taKana671/MazeLand).
 
 https://github.com/user-attachments/assets/43e0ae50-9e07-4ac0-9047-57782b8ed7a5
 
