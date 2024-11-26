@@ -15,7 +15,7 @@ from direct.gui.DirectGui import DirectEntry, DirectFrame, DirectLabel, DirectBu
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
 
-from src import Cylinder, Sphere, Torus, Cone, Plane, Box
+from src import Cylinder, Sphere, Torus, Cone, Box, RightTriangularPrism, Plane
 from src.validation import validate
 
 
@@ -302,7 +302,6 @@ class ModelDisplay(ShowBase):
 
     def change_model_types(self, name):
         match name.title():
-
             case Cone.__name__:
                 self.model_cls = Cone
             case Cylinder.__name__:
@@ -313,8 +312,9 @@ class ModelDisplay(ShowBase):
                 self.model_cls = Sphere
             case Box.__name__:
                 self.model_cls = Box
-            case Plane.__name__:
-                self.model_cls = Plane
+            # case Plane.__name__:
+            case 'Triangle':
+                self.model_cls = RightTriangularPrism
 
         self.state = Status.REPLACE_CLASS
 
@@ -418,7 +418,8 @@ class Gui(DirectFrame):
         self.create_model_type_btns(last_z - 0.15)
 
     def create_model_type_btns(self, start_z):
-        class_names = ['cone', 'cylinder', 'torus', 'sphere', 'box', 'plane']
+        class_names = ['cone', 'cylinder', 'torus', 'sphere', 'box', 'triangle']
+        # class_names = ['cone', 'cylinder', 'torus', 'sphere', 'box', 'plane']
 
         for i, text in enumerate(class_names):
             q, mod = divmod(i, 3)
