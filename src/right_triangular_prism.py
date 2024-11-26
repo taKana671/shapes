@@ -27,7 +27,7 @@ class RightTriangularPrism(ProceduralGeometry):
             invert (bool): whether or not the geometry should be rendered inside-out; default is False
     """
 
-    def __init__(self, adjacent=3., opposite=4., inner_adjacent=1.5, inner_opposite=2., height=1., segs_a=2,
+    def __init__(self, adjacent=1., opposite=2., inner_adjacent=0, inner_opposite=0., height=2., segs_a=2,
                  segs_top_cap=3, segs_bottom_cap=3, slice_caps_radial=2, slice_caps_axial=2, invert=False):
         super().__init__()
         self.adjacent = adjacent
