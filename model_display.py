@@ -119,10 +119,15 @@ class ModelDisplay(ShowBase):
         num = datetime.now().strftime('%Y%m%d%H%M%S')
         filename = f'{model_type}_{num}.bam'
 
-        output_mode = self.model.copy_to(self.render)
-        output_mode.clear_color()
-        output_mode.writeBamFile(filename)
-        output_mode.remove_node()
+        output_model = self.model.copy_to(self.render)
+        output_model.set_render_mode_filled()
+        output_model.set_hpr(Vec3(0, 0, 0))
+        output_model.set_color(LColor(1, 1, 1, 1))
+        output_model.flatten_strong()
+
+        # output_mode.clear_color()
+        output_model.writeBamFile(filename)
+        output_model.remove_node()
 
     def toggle_rotation(self):
         self.is_rotating = not self.is_rotating
