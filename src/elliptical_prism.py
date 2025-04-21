@@ -6,7 +6,7 @@ from panda3d.core import Vec3, Point3, Vec2
 from .create_geometry import ProceduralGeometry
 
 
-class Ellipse(ProceduralGeometry):
+class EllipticalPrism(ProceduralGeometry):
     """Creates a cylinder model.
        Args:
             major_axis (float): the longest diameter; must be more than zero
@@ -297,8 +297,8 @@ class Ellipse(ProceduralGeometry):
             major_axis = self.major_axis - self.thickness
             minor_axis = self.minor_axis - self.thickness
 
-            maker = Ellipse(major_axis, minor_axis, 0, self.height, self.segs_c, self.segs_a,
-                            0, 0, self.ring_slice_deg, 0, 0, not self.invert)
+            maker = EllipticalPrism(major_axis, minor_axis, 0, self.height, self.segs_c, self.segs_a,
+                                    0, 0, self.ring_slice_deg, 0, 0, not self.invert)
 
             geom_node = maker.get_geom_node()
             self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
