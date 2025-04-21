@@ -30,8 +30,6 @@ class Plane(ProceduralGeometry):
         start_d = self.depth * -0.5
         offset_u = -start_w
         offset_v = -start_d
-
-        color = (1, 1, 1, 1)
         normal = Vec3(0, 0, 1)
 
         for i in range(self.segs_w + 1):
@@ -43,7 +41,7 @@ class Plane(ProceduralGeometry):
                 v = (y + offset_v) / self.depth
 
                 vdata_values.extend(Point3(x, y, 0))
-                vdata_values.extend(color)
+                vdata_values.extend(self.color)
                 vdata_values.extend(normal)
                 vdata_values.extend((u, v))
 

@@ -45,8 +45,6 @@ class Cone(ProceduralGeometry):
 
         self.segs_sc_r = slice_caps_radial
         self.segs_sc_a = slice_caps_axial
-
-        self.color = (1, 1, 1, 1)
         self.invert = invert
 
     def create_bottom_cap_triangles(self, vdata_values, prim_indices):

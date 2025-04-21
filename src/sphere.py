@@ -45,7 +45,6 @@ class Sphere(ProceduralGeometry):
         self.bottom_clip = bottom_clip
         self.slice_deg = slice_deg
         self.invert = invert
-        self.color = (1, 1, 1, 1)
 
     def get_cap_triangle_vertices(self, vdata_values, cap):
         radius_h = math.sqrt(self.radius ** 2 - cap.z ** 2)

@@ -44,7 +44,6 @@ class Torus(ProceduralGeometry):
         self.segs_rsec = ring_slice_end_cap
 
         self.invert = invert
-        self.color = (1, 1, 1, 1)
 
     def create_mantle(self, vdata_values, prim_indices):
         # invert = self.invert

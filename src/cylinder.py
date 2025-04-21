@@ -7,7 +7,7 @@ from .create_geometry import ProceduralGeometry
 
 
 class Cylinder(ProceduralGeometry):
-    """Create a cylinder model.
+    """Creates a cylinder model.
        Args:
             radius (float): the radius of the cylinder; must be more than zero
             inner_radius (float): the radius of the inner cylinder; must be less than radius or equal
@@ -38,7 +38,6 @@ class Cylinder(ProceduralGeometry):
         self.segs_sc_r = slice_caps_radial
         self.segs_sc_a = slice_caps_axial
         self.invert = invert
-        self.color = (1, 1, 1, 1)
 
     def create_cap_triangles(self, vdata_values, bottom=True):
         normal = Vec3(0, 0, 1) if self.invert else Vec3(0, 0, -1)
@@ -86,7 +85,7 @@ class Cylinder(ProceduralGeometry):
         n = 0 if self.inner_radius else 1
         vertex_cnt = 0
 
-        # bottom cap quad vertices
+        # cap quad vertices
         for i in range(n, segs_cap + 1 - n):
             r = self.inner_radius + self.thickness * (i + n) / segs_cap
 

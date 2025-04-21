@@ -45,7 +45,6 @@ class Box(ProceduralGeometry):
 
         self.center = Point3(0, 0, 0)
         self.invert = False
-        self.color = (1, 1, 1, 1)
 
     def define_vertex_order(self, index_offset, prim_indices, direction, inner_range, outer_range=1):
         for i in range(outer_range):

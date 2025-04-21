@@ -44,7 +44,6 @@ class RightTriangularPrism(ProceduralGeometry):
         self.segs_sc_a = slice_caps_axial
 
         self.invert = invert
-        self.color = (1, 1, 1, 1)
 
     def create_cap_triangles(self, vdata_values, bottom=True):
         normal = Vec3(0, 0, 1) if self.invert else Vec3(0, 0, -1)
@@ -303,11 +302,11 @@ class RightTriangularPrism(ProceduralGeometry):
         # Create an inner right triangular prism to connect it to the outer one.
         if self.inner_radius:
             # Exchange inner_oposite for adjacent, and inner_adjacent for opposite.
-            cylinder_maker = RightTriangularPrism(
+            maker = RightTriangularPrism(
                 self.inner_opposite, self.inner_adjacent, 0.0, 0.0,
                 self.height, self.segs_a, 0, 0, 0, 0, not self.invert)
 
-            geom_node = cylinder_maker.get_geom_node()
+            geom_node = maker.get_geom_node()
             self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
             return geom_node
 
