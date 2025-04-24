@@ -172,7 +172,6 @@ class Box(ProceduralGeometry):
             for direction in (-1, 1):
                 normal = Vec3()
                 normal[index.axis_3] = direction * (-1 if self.invert else 1)
-
                 vertex = Point3()
                 vertex[index.axis_3] = .5 * self.dims[index.axis_3] * direction + offset.axis_3
                 side_id = f"{'-' if direction == -1 else ''}{plane_id}"

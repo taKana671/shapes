@@ -10,10 +10,10 @@ class ProceduralGeometry:
         self.fmt, self.stride = self.create_format()
         self.color = (1, 1, 1, 1)
 
-    def __init_subclass__(cls):
-        super().__init_subclass__()
-        if 'get_geom_node' not in cls.__dict__:
-            raise NotImplementedError('Subclasses must override get_geom_node method.')
+    # def __init_subclass__(cls):
+    #     super().__init_subclass__()
+    #     if 'get_geom_node' not in cls.__dict__:
+    #         raise NotImplementedError('Subclasses must override get_geom_node method.')
 
     def create(self):
         geom_node = self.get_geom_node()
