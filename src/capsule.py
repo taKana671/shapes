@@ -20,16 +20,19 @@ class Capsule(Cylinder):
             height (float): length of the capsule.
             segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3.
             segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1.
-            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0; if 0, a top hemisphere is created.
-            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0; if 0. a bottom hemisphere is created.
+            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0; if 0, not be used when top_hemisphere is True.
+            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0; if 0. not be used when bottom_hemisphere is True.
             ring_slice_deg (int): the angle of the pie slice removed from the capsule, in degrees; must be from 0 to 360.
+            top_hemisphere (bool): a top hemisphere is created if True.
+            bottom_hemisphere (bool): a bottom hemisphere is created if True.
             slice_caps_radial (int): subdivisions of both slice caps, along the radius; minimum = 0.
             slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; minimum=0.
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 
-    def __init__(self, radius=1., inner_radius=0., height=1., segs_c=40, segs_a=2, segs_top_cap=0,
-                 segs_bottom_cap=0, ring_slice_deg=0, slice_caps_radial=2, slice_caps_axial=2, invert=False):
+    def __init__(self, radius=1., inner_radius=0., height=1., segs_c=40, segs_a=2,
+                 segs_top_cap=3, segs_bottom_cap=3, top_hemisphere=True, bottom_hemisphere=True,
+                 ring_slice_deg=0, slice_caps_radial=2, slice_caps_axial=2, invert=False):
         super().__init__(
             radius=radius,
             inner_radius=inner_radius,
@@ -44,78 +47,110 @@ class Capsule(Cylinder):
             invert=invert
         )
 
-    def create_bottom_hemisphere(self, vdata_values, prim_indices):
-        if self.segs_bc <= 0:
-            self.bottom_hemi = CapsuleHemisphere(
+        self.top_hemisphere = top_hemisphere
+        self.bottom_hemisphere = bottom_hemisphere
+
+    def create_bottom(self, vdata_values, prim_indices):
+        vertex_cnt = 0
+
+        if self.bottom_hemisphere:
+            self.b_hemi = CapsuleHemisphere(
                 center=Point3(0, 0, 0),
                 radius=self.radius,
                 inner_radius=self.inner_radius,
                 segs_h=self.segs_c,
-                segs_v=int(self.segs_c),
+                segs_v=int(self.segs_c / 2),
                 slice_deg=self.ring_slice_deg,
                 segs_slice_caps=self.segs_sc_r,
                 top_clip=0,
                 invert=self.invert
             )
 
-            vertex_cnt, offset = self.bottom_hemi.create_bottom(0, vdata_values, prim_indices)
-            vertex_cnt += self.bottom_hemi.create_mantle_quads(offset, vdata_values, prim_indices)
-            vertex_cnt += self.bottom_hemi.create_top(vertex_cnt, vdata_values, prim_indices)
+            vertex_cnt, offset = self.b_hemi.create_bottom(0, vdata_values, prim_indices)
+            vertex_cnt += self.b_hemi.create_mantle_quads(offset, vdata_values, prim_indices)
+            vertex_cnt += self.b_hemi.create_top(vertex_cnt, vdata_values, prim_indices)
             return vertex_cnt
 
         # Create bottom cap as well as cylinder, if bottom hemisphere is not be created.
-        vertex_cnt = self.create_bottom_cap_triangles(vdata_values, prim_indices)
-        vertex_cnt += self.create_bottom_cap_quads(vdata_values, prim_indices)
+        if self.segs_bc:
+            vertex_cnt = self.create_bottom_cap_triangles(vdata_values, prim_indices)
+            vertex_cnt += self.create_bottom_cap_quads(vdata_values, prim_indices)
+            return vertex_cnt
+
         return vertex_cnt
 
-    def create_top_hemisphere(self, vertex_cnt, vdata_values, prim_indices):
-        if self.segs_tc <= 0:
-            self.top_hemi = CapsuleHemisphere(
+    def create_top(self, vertex_cnt, vdata_values, prim_indices):
+        if self.top_hemisphere:
+            self.t_hemi = CapsuleHemisphere(
                 center=Point3(0, 0, self.height),
                 radius=self.radius,
                 inner_radius=self.inner_radius,
                 segs_h=self.segs_c,
-                segs_v=int(self.segs_c),
+                segs_v=int(self.segs_c / 2),
                 slice_deg=self.ring_slice_deg,
                 segs_slice_caps=self.segs_sc_r,
                 bottom_clip=0,
                 invert=self.invert
             )
 
-            cnt, index_offset = self.top_hemi.create_bottom(vertex_cnt, vdata_values, prim_indices)
+            cnt, index_offset = self.t_hemi.create_bottom(vertex_cnt, vdata_values, prim_indices)
             vertex_cnt += cnt
-            vertex_cnt += self.top_hemi.create_mantle_quads(index_offset, vdata_values, prim_indices)
-            vertex_cnt += self.top_hemi.create_top(vertex_cnt, vdata_values, prim_indices)
+            vertex_cnt += self.t_hemi.create_mantle_quads(index_offset, vdata_values, prim_indices)
+            vertex_cnt += self.t_hemi.create_top(vertex_cnt, vdata_values, prim_indices)
             return vertex_cnt
 
         # Create top cap as well as cylinder, if top hemisphere is not be created.
-        cnt = vertex_cnt
-        vertex_cnt += self.create_top_cap_triangles(cnt, vdata_values, prim_indices)
-        vertex_cnt += self.create_top_cap_quads(cnt, vdata_values, prim_indices)
+        if self.segs_tc:
+            cnt = vertex_cnt
+            vertex_cnt += self.create_top_cap_triangles(cnt, vdata_values, prim_indices)
+            vertex_cnt += self.create_top_cap_quads(cnt, vdata_values, prim_indices)
+            return vertex_cnt
+
+        return vertex_cnt
+
+    def create_slice_caps(self, vertex_cnt, vdata_values, prim_indices):
+        if self.bottom_hemisphere:
+            vertex_cnt += self.b_hemi.create_slice_cap(vertex_cnt, vdata_values, prim_indices)
+
+        vertex_cnt += self.create_slice_cap_quads(vertex_cnt, vdata_values, prim_indices)
+
+        if self.top_hemisphere:
+            vertex_cnt += self.t_hemi.create_slice_cap(vertex_cnt, vdata_values, prim_indices)
+
         return vertex_cnt
 
     def get_geom_node(self):
-        self.thickness = self.radius - self.inner_radius
-        self.slice_rad = math.pi * self.ring_slice_deg / 180
-        self.delta_rad = math.pi * ((360 - self.ring_slice_deg) / 180) / self.segs_c
+        self.define_variables()
 
         # Create an outer capusule.
         vdata_values = array.array('f', [])
         prim_indices = array.array('H', [])
+        vertex_cnt = 0
 
-        vertex_cnt = self.create_bottom_hemisphere(vdata_values, prim_indices)
+        vertex_cnt = self.create_bottom(vdata_values, prim_indices)
         vertex_cnt += self.create_mantle_quads(vertex_cnt, vdata_values, prim_indices)
-        vertex_cnt = self.create_top_hemisphere(vertex_cnt, vdata_values, prim_indices)
+        vertex_cnt = self.create_top(vertex_cnt, vdata_values, prim_indices)
 
         if self.ring_slice_deg and self.segs_sc_r and self.segs_sc_a:
-            vertex_cnt += self.bottom_hemi.create_slice_cap(vertex_cnt, vdata_values, prim_indices)
-            vertex_cnt += self.create_slice_cap_quads(vertex_cnt, vdata_values, prim_indices)
-            vertex_cnt += self.top_hemi.create_slice_cap(vertex_cnt, vdata_values, prim_indices)
+            vertex_cnt = self.create_slice_caps(vertex_cnt, vdata_values, prim_indices)
 
         # Create an inner capsule to connect to the outer one.
         if self.inner_radius:
-            maker = Capsule(self.inner_radius, 0, self.height, self.segs_c, self.segs_a,
-                            0, 0, self.ring_slice_deg, 0, 0, not self.invert)
+            maker = Capsule(
+                radius=self.inner_radius,
+                inner_radius=0,
+                height=self.height,
+                segs_c=self.segs_c,
+                segs_a=self.segs_a,
+                segs_top_cap=0,
+                segs_bottom_cap=0,
+                top_hemisphere=self.top_hemisphere,
+                bottom_hemisphere=self.bottom_hemisphere,
+                ring_slice_deg=self.ring_slice_deg,
+                slice_caps_radial=0,
+                slice_caps_axial=0,
+                invert=not self.invert
+            )
 
             geom_node = maker.get_geom_node()
             self.add(geom_node, vdata_values, vertex_cnt, prim_indices)

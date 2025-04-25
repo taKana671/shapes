@@ -253,10 +253,13 @@ class Cylinder(ProceduralGeometry):
 
         return vertex_cnt
 
-    def get_geom_node(self):
+    def define_variables(self):
         self.thickness = self.radius - self.inner_radius
         self.slice_rad = math.pi * self.ring_slice_deg / 180
         self.delta_rad = math.pi * ((360 - self.ring_slice_deg) / 180) / self.segs_c
+
+    def get_geom_node(self):
+        self.define_variables()
 
         # Create an outer cylinder.
         vdata_values = array.array('f', [])
@@ -279,8 +282,19 @@ class Cylinder(ProceduralGeometry):
 
         # Create an inner cylinder to connect it to the outer cylinder.
         if self.inner_radius:
-            cylinder_maker = Cylinder(self.inner_radius, 0, self.height, self.segs_c, self.segs_a,
-                                      0, 0, self.ring_slice_deg, 0, 0, not self.invert)
+            cylinder_maker = Cylinder(
+                radius=self.inner_radius,
+                inner_radius=0,
+                height=self.height,
+                segs_c=self.segs_c,
+                segs_a=self.segs_a,
+                segs_top_cap=0,
+                segs_bottom_cap=0,
+                ring_slice_deg=self.ring_slice_deg,
+                slice_caps_radial=0,
+                slice_caps_axial=0,
+                invert=not self.invert
+            )
 
             geom_node = cylinder_maker.get_geom_node()
             self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
