@@ -24,8 +24,8 @@ class RoundedBox(Box):
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 
-    def __init__(self, width=1.0, depth=1.0, height=1.0, segs_w=4, segs_d=4, segs_z=4, thickness=0,
-                 rounded_left=True, rounded_right=True, open_top=False, open_bottom=False, invert=False):
+    def __init__(self, width=2.0, depth=1.0, height=1.0, segs_w=4, segs_d=4, segs_z=4, thickness=0.2,
+                 rounded_left=True, rounded_right=True, open_top=True, open_bottom=False, invert=False):
         super().__init__(
             width=width,
             depth=depth,
@@ -155,8 +155,7 @@ class BoxEdgeCylinder(Cylinder):
     """
 
     def __init__(self, center, start_angle_deg, radius=1., inner_radius=0., height=1.,
-                 segs_c=40, segs_a=2, segs_top_cap=3, segs_bottom_cap=3, ring_slice_deg=0,
-                 slice_caps_radial=1, slice_caps_axial=1, invert=False):
+                 segs_c=40, segs_a=2, segs_top_cap=3, segs_bottom_cap=3, ring_slice_deg=0, invert=False):
         super().__init__(
             radius=radius,
             inner_radius=inner_radius,
@@ -166,8 +165,6 @@ class BoxEdgeCylinder(Cylinder):
             segs_top_cap=segs_top_cap,
             segs_bottom_cap=segs_bottom_cap,
             ring_slice_deg=ring_slice_deg,
-            slice_caps_radial=slice_caps_radial,
-            slice_caps_axial=slice_caps_axial,
             invert=invert
         )
 
