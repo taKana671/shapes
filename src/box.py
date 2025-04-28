@@ -14,7 +14,7 @@ class Box(ProceduralGeometry):
             height (float): dimension along the z-axis; more than zero.
             segs_w (int): the number of subdivisions in width; more than 1.
             segs_d (int): the number of subdivisions in depth; more than 1.
-            segs_h (int): the number of subdivisions in height; more than 1.
+            segs_z (int): the number of subdivisions in height; more than 1.
             thickness (float): offset of inner box sides; 0 means no inner box.
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
             open_left(bool): if True, no left side.
@@ -161,8 +161,8 @@ class Box(ProceduralGeometry):
 
         return name, index, offset, segments
 
-    def create_sides(self, vdata_values, prim_indices):
-        vertex_cnt = 0
+    def create_sides(self, vertex_cnt, vdata_values, prim_indices):
+        # vertex_cnt = 0
 
         for plane in ('xyz', 'zxy', 'yzx'):
             plane_id = plane[:2]
@@ -222,6 +222,9 @@ class Box(ProceduralGeometry):
             'xy': self.open_top
         }
 
+        if self.thickness > 0:
+            self.define_inner_details()
+
     def calc_inner_box_center(self):
         pts = [(self.inner_corners[f'-{s}'] - self.inner_corners[s]) for s in 'xyz']
         inner_center = Point3(*pts) * 0.5
@@ -230,15 +233,13 @@ class Box(ProceduralGeometry):
 
     def get_geom_node(self):
         self.define_variables()
-        if self.thickness > 0:
-            self.define_inner_details()
 
         # Create outer box sides.
         vdata_values = array.array('f', [])
         prim_indices = array.array('H', [])
         vertex_cnt = 0
 
-        vertex_cnt += self.create_sides(vdata_values, prim_indices)
+        vertex_cnt += self.create_sides(vertex_cnt, vdata_values, prim_indices)
 
         # Create the inner box to connect it to the outer one.
         if self.thickness > 0:
