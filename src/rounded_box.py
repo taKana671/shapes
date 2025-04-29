@@ -46,7 +46,7 @@ class CapsulePrism(RoundedBox):
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 
-    def __init__(self, width=2., depth=1., height=1., segs_w=4, segs_d=4, segs_z=4, thickness=0.,
+    def __init__(self, width=1., depth=1., height=1., segs_w=4, segs_d=4, segs_z=4, thickness=0.,
                  rounded_left=True, rounded_right=True, open_top=False, open_bottom=False, invert=False):
         super().__init__(
             width=width,

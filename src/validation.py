@@ -52,7 +52,7 @@ def validate(name, value):
                 return
             msg = 'must be greater than or equal to 0'
 
-        case '(_|^)radius$':
+        case '(_|^)radius$' | '_axis&':
             if value > 0:
                 return
             msg = 'must be greater than 0'
@@ -63,7 +63,7 @@ def validate(name, value):
                 return
             msg = 'inner radius must be in the range from 0 to radius'
 
-        case '^invert$' | '^open_':
+        case '^invert$' | '^open_' | '^rounded_' | '_hemisphere$':
             if isinstance(value, bool):
                 return
             msg = 'must be bool'
