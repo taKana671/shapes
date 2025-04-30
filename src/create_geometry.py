@@ -8,11 +8,7 @@ class ProceduralGeometry:
 
     def __init__(self):
         self.fmt, self.stride = self.create_format()
-
-    def __init_subclass__(cls):
-        super().__init_subclass__()
-        if 'get_geom_node' not in cls.__dict__:
-            raise NotImplementedError('Subclasses must override get_geom_node method.')
+        self.color = (1, 1, 1, 1)
 
     def create(self):
         geom_node = self.get_geom_node()
@@ -106,3 +102,15 @@ class ProceduralGeometry:
         prim_mem = memoryview(prim_array).cast('B').cast('H')
         prim_mem[old_prim_cnt:] = add_prim
         prim.offset_vertices(old_vert_cnt, old_prim_cnt, new_prim_cnt)
+
+    def merge_geom(self, main_geom_nd, new_geom_nd, axis_vec, bottom_center, rotation_deg=0):
+        new_geom = new_geom_nd.modify_geom(0)
+        new_vdata = new_geom.modify_vertex_data()
+        self.tranform_vertices(new_vdata, axis_vec, bottom_center, rotation_deg)
+        new_vert_cnt = new_vdata.get_num_rows()
+        new_vdata_mem = memoryview(new_vdata.modify_array(0)).cast('B').cast('f')
+
+        new_prim = new_geom.modify_primitive(0)
+        new_prim_array = new_prim.modify_vertices()
+        new_prim_mem = memoryview(new_prim_array).cast('B').cast('H')
+        self.add(main_geom_nd, new_vdata_mem, new_vert_cnt, new_prim_mem)

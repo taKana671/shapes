@@ -45,7 +45,6 @@ class Sphere(ProceduralGeometry):
         self.bottom_clip = bottom_clip
         self.slice_deg = slice_deg
         self.invert = invert
-        self.color = (1, 1, 1, 1)
 
     def get_cap_triangle_vertices(self, vdata_values, cap):
         radius_h = math.sqrt(self.radius ** 2 - cap.z ** 2)
@@ -215,7 +214,6 @@ class Sphere(ProceduralGeometry):
 
     def create_bottom(self, index_offset, vdata_values, prim_indices):
         vertex_cnt = 0
-        index_offset = 0
 
         cap = SimpleNamespace(
             z=self.bottom_height,
@@ -571,7 +569,6 @@ class Sphere(ProceduralGeometry):
 
         vdata_values = array.array('f', [])
         prim_indices = array.array('H', [])
-        vertex_cnt = 0
 
         # Create an outer sphere.
         vertex_cnt, index_offset = self.create_bottom(0, vdata_values, prim_indices)

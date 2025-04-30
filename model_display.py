@@ -9,20 +9,48 @@ from panda3d.core import Vec3, Vec2, Point3, LColor, Vec4
 from panda3d.core import AmbientLight, DirectionalLight
 from panda3d.core import NodePath, TextNode
 from panda3d.core import load_prc_file_data
-from panda3d.core import TransparencyAttrib
 from panda3d.core import OrthographicLens, Camera, MouseWatcher, PGTop
+from panda3d.core import TransparencyAttrib, AntialiasAttrib
 from direct.gui.DirectGui import DirectEntry, DirectFrame, DirectLabel, DirectButton, OkDialog
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
 
-from src import Cylinder, Sphere, Torus, Cone, Box, RightTriangularPrism, Plane
+
+from src import Cylinder
+from src import Sphere
+from src import Torus
+from src import Cone
+from src import Box
+from src import RightTriangularPrism
+from src import Plane
+from src import EllipticalPrism
+from src import Capsule
+from src import CapsulePrism, RoundedCornerBox
 from src.validation import validate
 
-
+# Without 'framebuffer-multisample' and 'multisamples' settings,
+# there appears to be no effect of 'set_antialias(AntialiasAttrib.MAuto)'.
 load_prc_file_data("", """
     win-size 1200 600
     window-title ProceduralShapes
-""")
+    framebuffer-multisample 1
+    multisamples 2
+    """)
+
+
+SHAPES = {
+    'cone': Cone,
+    'cylinder': Cylinder,
+    'torus': Torus,
+    'sphere': Sphere,
+    'box': Box,
+    'triangle': RightTriangularPrism,
+    'plane': Plane,
+    'capsule': Capsule,
+    'capsule_prism': CapsulePrism,
+    'elliptical_prism': EllipticalPrism,
+    'rounded_corner_box': RoundedCornerBox
+}
 
 
 def is_int(str_val):
@@ -63,29 +91,38 @@ class ModelDisplay(ShowBase):
 
     def __init__(self):
         super().__init__()
-
         self.disable_mouse()
-        self.camera_root = NodePath('camera_root')
-        self.camera_root.reparent_to(self.render)
+        # self.setBackgroundColor(0.6, 0.6, 0.6)
+        self.render.set_antialias(AntialiasAttrib.MAuto)
         self.setup_light()
 
+        # Create model display region.
+        self.camera_root = NodePath('camera_root')
+        self.camera_root.reparent_to(self.render)
+        self.mw3d_node = self.create_display_region(Vec4(0.3, 1.0, 0.0, 0.91))
+
+        # Create gui regions.
+        self.ctrl_aspect2d = self.create_gui_region(Vec4(0.0, 0.3, 0.0, 1.0), 'ctrl')
+        self.slct_aspect2d = self.create_gui_region(Vec4(0.3, 1.0, 0.91, 1.0), 'slct')
+
+        # Create gui.
+        self.gui = Gui()
+        self.gui.create_control_widgets(self.ctrl_aspect2d)
+        self.gui.create_model_selector(self.slct_aspect2d)
+
+        # Define variables.
         self.is_rotating = True
         self.show_wireframe = True
-
-        self.mw3d_node = self.create_display_region()
-        self.gui_aspect2d = self.create_gui_region()
-        self.gui = Gui(self.gui_aspect2d)
-
-        self.model_cls = Cone
-        model_maker = self.model_cls()
-        self.gui.set_default_values(model_maker)
-
-        model = model_maker.create()
-        self.dispay_model(model, hpr=Vec3(0, 0, 0))
-
         self.dragging = False
         self.before_mouse_pos = None
         self.state = Status.SHOW_MODEL
+
+        # Show default model.
+        self.model_cls = Cone
+        model_maker = self.model_cls()
+        self.gui.set_default_values(model_maker)
+        model = model_maker.create()
+        self.dispay_model(model, hpr=Vec3(0, 0, 0))
 
         # self.accept('d', self.toggle_wireframe)
         # self.accept('r', self.toggle_rotation)
@@ -103,7 +140,6 @@ class ModelDisplay(ShowBase):
 
         self.model = model
         self.model.set_pos_hpr_scale(Point3(0, 0, 0), hpr, scale)
-        # self.model.set_texture(self.loader.load_texture('brick.jpg'))
         self.model.set_color(LColor(1, 0, 0, 1))
         self.model.reparent_to(self.render)
 
@@ -187,11 +223,11 @@ class ModelDisplay(ShowBase):
 
         return mw_node
 
-    def create_display_region(self):
+    def create_display_region(self, region_size):
         """Create the region to display a model.
+            Args:
+                size (Vec4): Vec4(left, right, bottom, top)
         """
-        # (left, right, bottom, top)
-        region_size = Vec4(0.3, 1.0, 0.0, 1.0)
         region = self.win.make_display_region(region_size)
 
         # create custom camera.
@@ -200,6 +236,7 @@ class ModelDisplay(ShowBase):
         cam.node().get_lens().set_aspect_ratio(aspect_ratio)
         region.set_camera(cam)
         self.camNode.set_active(False)
+
         cam.set_pos(Point3(30, -30, 0))
         cam.look_at(Point3(0, 0, 0))
         cam.reparent_to(self.camera_root)
@@ -209,35 +246,36 @@ class ModelDisplay(ShowBase):
 
         return mw3d_node
 
-    def create_gui_region(self):
+    def create_gui_region(self, region_size, name):
         """Create the custom 2D region for gui.
+            Args:
+                size (Vec4): Vec4(left, right, bottom, top)
         """
-        # (left, right, bottom, top)
-        region_size = Vec4(0.0, 0.3, 0.0, 1.0)
         region = self.win.make_display_region(region_size)
         region.set_sort(20)
-        region.set_clear_color((0.5, 0.5, 0.5, 1.))
-        region.set_clear_color_active(True)
+        # region.set_clear_color((0.5, 0.5, 0.5, 1.))
+        # region.set_clear_color_active(True)
 
         # create custom camera.
-        cam = NodePath(Camera('cam2d'))
+        cam = NodePath(Camera(f'cam_{name}'))
         lens = OrthographicLens()
         lens.set_film_size(2, 2)
         lens.set_near_far(-1000, 1000)
         cam.node().set_lens(lens)
 
-        gui_render2d = NodePath('gui_render2d')
+        gui_render2d = NodePath(f'render2d_{name}')
         gui_render2d.set_depth_test(False)
         gui_render2d.set_depth_write(False)
+
         cam.reparent_to(gui_render2d)
         region.set_camera(cam)
 
-        gui_aspect2d = gui_render2d.attach_new_node(PGTop('gui_aspect2d'))
+        gui_aspect2d = gui_render2d.attach_new_node(PGTop(f'gui_{name}'))
         scale = self.calc_scale(region_size)
         gui_aspect2d.set_scale(scale)
 
         # create a MouseWatcher of the region.
-        mw2d_nd = self.create_mouse_watcher('mw2d', region)
+        mw2d_nd = self.create_mouse_watcher(f'mw_{name}', region)
         gui_aspect2d.node().set_mouse_watcher(mw2d_nd)
 
         return gui_aspect2d
@@ -306,21 +344,7 @@ class ModelDisplay(ShowBase):
         raise ValueError(f'{label_txt}: input value is invalid.')
 
     def change_model_types(self, name):
-        match name.title():
-            case Cone.__name__:
-                self.model_cls = Cone
-            case Cylinder.__name__:
-                self.model_cls = Cylinder
-            case Torus.__name__:
-                self.model_cls = Torus
-            case Sphere.__name__:
-                self.model_cls = Sphere
-            case Box.__name__:
-                self.model_cls = Box
-            # case Plane.__name__:
-            case 'Triangle':
-                self.model_cls = RightTriangularPrism
-
+        self.model_cls = SHAPES[name]
         self.state = Status.REPLACE_CLASS
 
     def reflect_changes(self):
@@ -380,64 +404,67 @@ class ModelDisplay(ShowBase):
         return task.cont
 
 
-class Gui(DirectFrame):
+class Frame(DirectFrame):
 
-    def __init__(self, parent):
-        self.font = base.loader.load_font('fonts/DejaVuSans.ttf')
-        self.frame_color = LColor(0.6, 0.6, 0.6, 1)
-        self.text_color = LColor(1.0, 1.0, 1.0, 1.0)
-        self.text_size = 0.05
-
+    def __init__(self, parent, size):
         super().__init__(
             parent=parent,
-            frameSize=(-0.6, 0.6, -1., 1.),  # (left, right, bottom, top)
-            frameColor=self.frame_color,
+            frameSize=size,
+            frameColor=Gui.frame_color,
             pos=Point3(0, 0, 0),
             relief=DGG.SUNKEN,
             borderWidth=(0.01, 0.01)
         )
         self.initialiseoptions(type(self))
         self.set_transparency(TransparencyAttrib.MAlpha)
-        self.create_gui()
+
+
+class Gui:
+
+    frame_color = LColor(0.6, 0.6, 0.6, 1)
+    text_color = LColor(1.0, 1.0, 1.0, 1.0)
+
+    def __init__(self):
+        self.font = base.loader.load_font('fonts/DejaVuSans.ttf')
+        self.text_size = 0.05
 
         base.accept('tab', self.change_focus, [True])
         base.accept('shift-tab', self.change_focus, [False])
 
-    def change_focus(self, go_down):
-        entries = list(self.entries.values())
+    def create_control_widgets(self, parent):
+        frame = Frame(
+            parent,
+            Vec4(-0.6, 0.6, -1., 1.),  # (left, right, bottom, top)
+        )
 
-        for i, entry in enumerate(entries):
-            if entry['focus']:
-                if go_down:
-                    next_idx = i + 1 if i < len(self.entries) - 1 else 0
-                else:
-                    next_idx = len(self.entries) - 1 if i == 0 else i - 1
+        last_z = self.create_input_boxes(frame)
+        _ = self.create_control_btns(frame, last_z)
 
-                entry['focus'] = 0
-                entries[next_idx]['focus'] = 1
-                break
+    def create_model_selector(self, parent):
+        frame = Frame(
+            parent,
+            Vec4(-1.4, 1.4, -0.09, 0.09),  # (left, right, bottom, top)
+        )
 
-    def create_gui(self):
-        last_z = self.create_edit_boxes(0.88)
-        last_z = self.create_control_buttons(last_z - 0.12)
-        self.create_model_type_btns(last_z - 0.15)
+        self.create_model_select_btns(frame)
 
-    def create_model_type_btns(self, start_z):
-        class_names = ['cone', 'cylinder', 'torus', 'sphere', 'box', 'triangle']
-        # class_names = ['cone', 'cylinder', 'torus', 'sphere', 'box', 'plane']
+    def create_model_select_btns(self, parent):
+        start_x = -1.31
+        start_z = 0
+        btn_size = 0.16
+        half = btn_size / 2
 
-        for i, text in enumerate(class_names):
-            q, mod = divmod(i, 3)
-            x = -0.34 + mod * 0.341
-            z = start_z - q * 0.1
+        for i, text in enumerate(SHAPES.keys()):
+            x = start_x + i * btn_size
 
             DirectButton(
-                parent=self,
-                pos=Point3(x, 0, z),
+                parent=parent,
+                image=f'icons/{text}.png',
+                image_scale=0.05,
+                pos=Point3(x, 0, start_z),
                 relief=DGG.RAISED,
-                frameSize=(-0.171, 0.17, -0.05, 0.05),
+                frameSize=(-half, half, -half, half),
                 frameColor=self.frame_color,
-                text=text,
                 text_fg=self.text_color,
                 text_scale=self.text_size,
                 text_font=self.font,
@@ -447,33 +474,15 @@ class Gui(DirectFrame):
                 extraArgs=[text]
             )
 
-        return z
-
-    def set_default_values(self, instance):
-        exclude = ('bottom_center', 'top_center', 'center', 'fmt', 'color', 'stride')
-        keys = [k for k in instance.__dict__.keys() if k not in exclude]
-        key_cnt = len(keys)
-
-        for i, (label, entry) in enumerate(self.entries.items()):
-            if i < key_cnt:
-                k = keys[i]
-                label_txt = REPLACE_NAMES[k] if k in REPLACE_NAMES else k
-                label.setText(label_txt)
-                defalut_val = instance.__dict__[k]
-                entry.enterText(str(defalut_val))
-                continue
-
-            label.setText('')
-            entry.enterText('')
-
-    def create_edit_boxes(self, start_z):
+    def create_input_boxes(self, parent):
         self.entries = {}
+        start_z = 0.88
 
-        for i in range(14):
+        for i in range(16):
             z = start_z - i * 0.1
 
             label = DirectLabel(
-                parent=self,
+                parent=parent,
                 pos=Point3(0.2, 0.0, z),
                 frameColor=LColor(1, 1, 1, 0),
                 text='',
@@ -484,7 +493,7 @@ class Gui(DirectFrame):
             )
 
             entry = DirectEntry(
-                parent=self,
+                parent=parent,
                 pos=Point3(0.25, 0, z),
                 relief=DGG.SUNKEN,
                 frameColor=self.frame_color,
@@ -502,7 +511,7 @@ class Gui(DirectFrame):
 
         return z
 
-    def create_control_buttons(self, start_z):
+    def create_control_btns(self, parent, start_z):
         buttons = [
             ('Reflect Changes', base.reflect_changes),
             ('Output BamFile', base.output_bam_file),
@@ -510,13 +519,15 @@ class Gui(DirectFrame):
             ('Toggle Rotation', base.toggle_rotation),
         ]
 
+        start_z -= 0.18
+
         for i, (text, cmd) in enumerate(buttons):
             q, mod = divmod(i, 2)
             x = -0.255 + mod * 0.51
             z = start_z - 0.1 * q
 
             DirectButton(
-                parent=self,
+                parent=parent,
                 pos=Point3(x, 0, z),
                 relief=DGG.RAISED,
                 frameSize=(-0.255, 0.255, -0.05, 0.05),
@@ -530,6 +541,40 @@ class Gui(DirectFrame):
                 command=cmd
             )
         return z
+
+    def set_default_values(self, instance):
+        keys = [k for k in instance.__dict__.keys() if k not in EX_COMMON]
+
+        if (name := instance.__class__.__name__) in EX_INDIVI:
+            keys = [k for k in keys if k not in EX_INDIVI[name]]
+
+        key_cnt = len(keys)
+
+        for i, (label, entry) in enumerate(self.entries.items()):
+            if i < key_cnt:
+                k = keys[i]
+                label_txt = REPLACE_NAMES[k] if k in REPLACE_NAMES else k
+                label.setText(label_txt)
+                defalut_val = instance.__dict__[k]
+                entry.enterText(str(defalut_val))
+                continue
+
+            label.setText('')
+            entry.enterText('')
+
+    def change_focus(self, go_down):
+        entries = list(self.entries.values())
+
+        for i, entry in enumerate(entries):
+            if entry['focus']:
+                if go_down:
+                    next_idx = i + 1 if i < len(self.entries) - 1 else 0
+                else:
+                    next_idx = len(self.entries) - 1 if i == 0 else i - 1
+
+                entry['focus'] = 0
+                entries[next_idx]['focus'] = 1
+                break
 
     def show_dialog(self, msg):
         self.dialog = OkDialog(
@@ -559,6 +604,14 @@ class Gui(DirectFrame):
         base.taskMgr.do_method_later(0.5, withdraw, 'withdraw')
 
 
+EX_COMMON = ('bottom_center', 'top_center', 'center', 'fmt', 'color', 'stride')
+
+EX_INDIVI = {
+    'CapsulePrism': ['open_left', 'open_right', 'open_front', 'open_back'],
+    'RoundedCornerBox': ['open_left', 'open_right', 'open_front', 'open_back'],
+}
+
+
 REPLACE_NAMES = {
     'segs_sc_r': 'slice_caps_radial',
     'segs_sc_a': 'slice_caps_axial',
@@ -569,6 +622,11 @@ REPLACE_NAMES = {
     'segs_ssec': 'section_slice_end_cap',
     'segs_rssp': 'ring_slice_start_cap',
     'segs_rsec': 'ring_slice_end_cap',
+    'c_radius': 'corner_radius',
+    'rf_left': 'rounded_f_left',
+    'rf_right': 'rounded_f_right',
+    'rb_left': 'rounded_b_left',
+    'rb_right': 'rounded_b_right'
 }
 
 

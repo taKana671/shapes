@@ -6,43 +6,39 @@ from panda3d.core import Vec3, Point3, Vec2
 from .create_geometry import ProceduralGeometry
 
 
-class RightTriangularPrism(ProceduralGeometry):
-    """Create a right triangular prism model.
+class EllipticalPrism(ProceduralGeometry):
+    """Creates a cylinder model.
        Args:
-            adjacent (float): the base of a right triangle; must be more than zero
-            opposite (float): the height of a right triangle; must be more than zero
-            inner_adjacent (float):
-                the base of a inner right triangle; must be more than zero;
-                adjacent:opposite = inner_adjacent:inner_opposite
-            inner_opposite (float):
-                the height of a inner right triangle; must be more than zero;
-                adjacent:opposite = inner_adjacent:inner_opposite
-
-            height (float): the height of a prism
+            major_axis (float): the longest diameter; must be more than zero
+            minor_axis (float): the shortest diameter; must be more than zero
+            thickness (floar): the radial offset of major and minor axes; must be 0 < thickness < minor_axis
+            height (float): length of the cylinder
+            segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3
             segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1
             segs_top_cap (int): radial subdivisions of the top cap; minimum = 0
             segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0
+            ring_slice_deg (int): the angle of the pie slice removed from the ellipse, in degrees; must be from 0 to 360
             slice_caps_radial (int): subdivisions of both slice caps, along the radius; minimum = 0
             slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; minimum=0
             invert (bool): whether or not the geometry should be rendered inside-out; default is False
     """
 
-    def __init__(self, adjacent=1., opposite=2., inner_adjacent=0, inner_opposite=0., height=2., segs_a=2,
-                 segs_top_cap=3, segs_bottom_cap=3, slice_caps_radial=2, slice_caps_axial=2, invert=False):
+    def __init__(self, major_axis=2., minor_axis=1., thickness=0., height=1., segs_c=40, segs_a=2, segs_top_cap=3,
+                 segs_bottom_cap=3, ring_slice_deg=0., slice_caps_radial=2, slice_caps_axial=2, invert=False):
         super().__init__()
-        self.adjacent = adjacent
-        self.opposite = opposite
-        self.inner_adjacent = inner_adjacent
-        self.inner_opposite = inner_opposite
-
+        self.major_axis = major_axis
+        self.minor_axis = minor_axis
+        self.thickness = thickness
         self.height = height
+        self.segs_c = segs_c
         self.segs_a = segs_a
 
         self.segs_tc = segs_top_cap
         self.segs_bc = segs_bottom_cap
+
+        self.ring_slice_deg = ring_slice_deg
         self.segs_sc_r = slice_caps_radial
         self.segs_sc_a = slice_caps_axial
-
         self.invert = invert
 
     def create_cap_triangles(self, vdata_values, bottom=True):
@@ -54,7 +50,9 @@ class RightTriangularPrism(ProceduralGeometry):
 
         height = 0 if bottom else self.height
         direction = -1 if self.invert else 1
-        r = self.radius / segs_cap
+
+        rj = self.major_axis / segs_cap
+        rn = self.minor_axis / segs_cap
         vertex_cnt = 0
 
         # cap center and triangle vertices
@@ -65,11 +63,11 @@ class RightTriangularPrism(ProceduralGeometry):
                 vdata_values.extend([*vertex, *self.color, *normal, *uv])
                 vertex_cnt += 1
 
-            angle = self.angles[i] + (0 if self.invert else self.slice_rad)
+            angle = self.delta_rad * i + (0 if self.invert else self.slice_rad)
 
             c = math.cos(angle)
             s = math.sin(angle) * direction
-            vertex = Point3(r * c, r * s, height)
+            vertex = Point3(rj * c, rn * s, height)
 
             u = 0.5 + c * 0.5 / segs_cap
             _direction = -direction if bottom else direction
@@ -89,23 +87,23 @@ class RightTriangularPrism(ProceduralGeometry):
 
         height = 0 if bottom else self.height
         direction = -1 if self.invert else 1
-        n = 0 if self.inner_radius else 1
+        n = 0 if self.has_inner else 1
         vertex_cnt = 0
 
-        # bottom cap quad vertices
+        # cap quad vertices
         for i in range(n, segs_cap + 1 - n):
-            r = self.inner_radius + self.thickness * (i + n) / segs_cap
+            rj = self.inner_major + self.major_thickness * (i + n) / segs_cap
+            rn = self.inner_minor + self.minor_thickness * (i + n) / segs_cap
 
             for j in range(self.segs_c + 1):
-                angle = self.angles[j] + (0 if self.invert else self.slice_rad)
+                angle = self.delta_rad * j + (0 if self.invert else self.slice_rad)
                 c = math.cos(angle)
                 s = math.sin(angle) * direction
-                vertex = Point3(r * c, r * s, height)
+                vertex = Point3(rj * c, rn * s, height)
 
-                _r = r / self.radius
-                u = 0.5 + c * 0.5 * _r
+                u = 0.5 + c * 0.5 * (rj / self.major_axis)
                 _direction = -direction if bottom else direction
-                v = 0.5 + s * 0.5 * _direction * _r
+                v = 0.5 + s * 0.5 * _direction * (rn / self.minor_axis)
 
                 vdata_values.extend([*vertex, *self.color, *normal, *(u, v)])
                 vertex_cnt += 1
@@ -115,7 +113,7 @@ class RightTriangularPrism(ProceduralGeometry):
     def create_bottom_cap_triangles(self, vdata_values, prim_indices):
         vertex_cnt = 0
 
-        if not self.inner_radius:
+        if not self.has_inner:
             # bottom cap center and triangle vertices
             vertex_cnt += self.create_cap_triangles(vdata_values)
 
@@ -130,8 +128,8 @@ class RightTriangularPrism(ProceduralGeometry):
         vertex_cnt = self.create_cap_quad_vertices(vdata_values)
 
         # the vertex order of the bottom cap quads
-        index_offset = (self.segs_c + 1) if self.inner_radius else 1
-        n = 0 if self.inner_radius else 1
+        index_offset = (self.segs_c + 1) if self.has_inner else 1
+        n = 0 if self.has_inner else 1
 
         for i in range(n, self.segs_bc):
             for j in range(self.segs_c):
@@ -152,27 +150,24 @@ class RightTriangularPrism(ProceduralGeometry):
             z = self.height * i / self.segs_a
             v = i / self.segs_a
 
-            for j in range(self.segs_c):
-                angle = self.angles[j] + (0 if self.invert else self.slice_rad)
-
-                x = self.radius * math.cos(angle)
-                y = self.radius * math.sin(angle) * direction
+            for j in range(self.segs_c + 1):
+                angle = self.delta_rad * j + (0 if self.invert else self.slice_rad)
+                x = self.major_axis * math.cos(angle)
+                y = self.minor_axis * math.sin(angle) * direction
                 vertex = Point3(x, y, z)
+
                 normal = Vec3(x, y, 0.0).normalized() * direction
-
-                if j == self.segs_c:
-                    normal = Vec3(x, y, 0.0).normalized() * direction * -1
-
                 u = j / self.segs_c
                 uv = Vec2(u, v)
 
                 vdata_values.extend([*vertex, *self.color, *normal, *uv])
                 vertex_cnt += 1
 
-        n = self.segs_c
+        # the vertex order of the mantle quads
+        n = self.segs_c + 1
 
         for i in range(1, self.segs_a + 1):
-            for j in range(self.segs_c - 1):
+            for j in range(self.segs_c):
                 vi1 = index_offset + i * n + j
                 vi2 = vi1 - n
                 vi3 = vi2 + 1
@@ -186,7 +181,7 @@ class RightTriangularPrism(ProceduralGeometry):
     def create_top_cap_triangles(self, index_offset, vdata_values, prim_indices):
         vertex_cnt = 0
 
-        if not self.inner_radius:
+        if not self.has_inner:
             # top cap center and triangle vertices
             vertex_cnt += self.create_cap_triangles(vdata_values, bottom=False)
 
@@ -201,8 +196,8 @@ class RightTriangularPrism(ProceduralGeometry):
         vertex_cnt = self.create_cap_quad_vertices(vdata_values, bottom=False)
 
         # the vertex order of the top cap quads
-        index_offset += (self.segs_c + 1) if self.inner_radius else 1
-        n = 0 if self.inner_radius else 1
+        index_offset += (self.segs_c + 1) if self.has_inner else 1
+        n = 0 if self.has_inner else 1
 
         for i in range(n, self.segs_tc):
             for j in range(self.segs_c):
@@ -221,18 +216,24 @@ class RightTriangularPrism(ProceduralGeometry):
 
         # the vertices of the slice cap quad
         for is_start in [True, False]:
-            normal = Vec3(0, direction, 0)
+            if is_start:
+                normal = Vec3(0, direction, 0)
+            else:
+                angle = self.delta_rad * self.segs_c
+                c = math.cos(angle)
+                s = -math.sin(angle)
+                normal = Vec3(s, -c, 0) * direction
 
             for i in range(self.segs_sc_a + 1):
                 z = self.height * i / self.segs_sc_a
                 v = i / self.segs_sc_a
 
                 for j in range(self.segs_sc_r + 1):
-                    r = self.inner_radius + (self.radius - self.inner_radius) * j / self.segs_sc_r
-                    vertex = Point3(r, 0, z) if is_start else Point3(-r, 0, z)
-
+                    rj = self.inner_major + (self.major_axis - self.inner_major) * j / self.segs_sc_r
+                    rn = self.inner_minor + (self.minor_axis - self.inner_minor) * j / self.segs_sc_r
+                    vertex = Point3(rj, 0, z) if is_start else Point3(rj * c, rn * s, z)
                     coef = 0.5 if is_start else -0.5
-                    u = 0.5 + coef * r / self.radius * direction * -1
+                    u = 0.5 + coef * rj / self.major_axis * direction * -1
                     uv = Vec2(u, v)
 
                     vdata_values.extend([*vertex, *self.color, *normal, *uv])
@@ -258,29 +259,21 @@ class RightTriangularPrism(ProceduralGeometry):
 
         return vertex_cnt
 
-    def calc_radius(self, adjacent, opposite):
-        hypotenuse = (adjacent ** 2 + opposite ** 2) ** 0.5
-        return hypotenuse * 0.5
-
     def define_variables(self):
-        self.radius = self.calc_radius(self.adjacent, self.opposite)
-        self.inner_radius = 0
+        self.major_thickness = self.thickness if 0 < self.thickness < self.major_axis else self.major_axis
+        self.minor_thickness = self.thickness if 0 < self.thickness < self.minor_axis else self.minor_axis
 
-        if self.inner_adjacent and self.inner_opposite:
-            if (radius := self.calc_radius(self.inner_adjacent, self.inner_opposite)) < self.radius:
-                self.inner_radius = radius
+        self.inner_major = self.major_axis - self.major_thickness
+        self.inner_minor = self.minor_axis - self.minor_thickness
+        self.has_inner = True if self.inner_major and self.inner_minor else False
 
-        self.thickness = self.radius - self.inner_radius
-        self.slice_rad = math.pi
-        self.segs_c = 3
-
-        theta = math.atan(self.opposite / self.adjacent)
-        self.angles = [0, theta * 2, math.pi, -math.pi]
+        self.slice_rad = math.pi * self.ring_slice_deg / 180
+        self.delta_rad = math.pi * ((360 - self.ring_slice_deg) / 180) / self.segs_c
 
     def get_geom_node(self):
         self.define_variables()
 
-        # Create an outer right triangular prism.
+        # Create an outer cylinder.
         vdata_values = array.array('f', [])
         prim_indices = array.array('H', [])
         vertex_cnt = 0
@@ -296,15 +289,16 @@ class RightTriangularPrism(ProceduralGeometry):
             vertex_cnt += self.create_top_cap_triangles(sub_total, vdata_values, prim_indices)
             vertex_cnt += self.create_top_cap_quads(sub_total, vdata_values, prim_indices)
 
-        if self.segs_sc_r and self.segs_sc_a:
+        if self.ring_slice_deg and self.segs_sc_r and self.segs_sc_a:
             vertex_cnt += self.create_slice_cap_quads(vertex_cnt, vdata_values, prim_indices)
 
-        # Create an inner right triangular prism to connect it to the outer one.
-        if self.inner_radius:
-            # Exchange inner_oposite for adjacent, and inner_adjacent for opposite.
-            maker = RightTriangularPrism(
-                self.inner_opposite, self.inner_adjacent, 0.0, 0.0,
-                self.height, self.segs_a, 0, 0, 0, 0, not self.invert)
+        # Create an inner ellipse to connect it to the outer one.
+        if self.has_inner:
+            major_axis = self.major_axis - self.thickness
+            minor_axis = self.minor_axis - self.thickness
+
+            maker = EllipticalPrism(major_axis, minor_axis, 0, self.height, self.segs_c, self.segs_a,
+                                    0, 0, self.ring_slice_deg, 0, 0, not self.invert)
 
             geom_node = maker.get_geom_node()
             self.add(geom_node, vdata_values, vertex_cnt, prim_indices)

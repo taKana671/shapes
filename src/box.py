@@ -14,7 +14,7 @@ class Box(ProceduralGeometry):
             height (float): dimension along the z-axis; more than zero.
             segs_w (int): the number of subdivisions in width; more than 1.
             segs_d (int): the number of subdivisions in depth; more than 1.
-            segs_h (int): the number of subdivisions in height; more than 1.
+            segs_z (int): the number of subdivisions in height; more than 1.
             thickness (float): offset of inner box sides; 0 means no inner box.
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
             open_left(bool): if True, no left side.
@@ -44,8 +44,7 @@ class Box(ProceduralGeometry):
         self.open_back = open_back
 
         self.center = Point3(0, 0, 0)
-        self.invert = False
-        self.color = (1, 1, 1, 1)
+        self.invert = invert
 
     def define_vertex_order(self, index_offset, prim_indices, direction, inner_range, outer_range=1):
         for i in range(outer_range):
@@ -162,8 +161,8 @@ class Box(ProceduralGeometry):
 
         return name, index, offset, segments
 
-    def create_sides(self, vdata_values, prim_indices):
-        vertex_cnt = 0
+    def create_sides(self, vertex_cnt, vdata_values, prim_indices):
+        # vertex_cnt = 0
 
         for plane in ('xyz', 'zxy', 'yzx'):
             plane_id = plane[:2]
@@ -173,7 +172,6 @@ class Box(ProceduralGeometry):
             for direction in (-1, 1):
                 normal = Vec3()
                 normal[index.axis_3] = direction * (-1 if self.invert else 1)
-
                 vertex = Point3()
                 vertex[index.axis_3] = .5 * self.dims[index.axis_3] * direction + offset.axis_3
                 side_id = f"{'-' if direction == -1 else ''}{plane_id}"
@@ -188,9 +186,15 @@ class Box(ProceduralGeometry):
 
         return vertex_cnt
 
-    def get_inner_details(self, outer_box_details):
-        inner_corners = {}
-        inner_dims = {}
+    # def define_inner_details(self):
+    def define_inner_details(self, outer_box_details):
+        # outer_box_details = [
+        #     ['x', self.width, self.open_left, self.open_right],
+        #     ['y', self.depth, self.open_back, self.open_front],
+        #     ['z', self.height, self.open_bottom, self.open_top]
+        # ]
+        self.inner_corners = {}
+        self.inner_dims = {}
 
         for axis, dim, open_side1, open_side2 in outer_box_details:
             th1 = 0. if open_side1 else min(dim, self.thickness)
@@ -199,13 +203,14 @@ class Box(ProceduralGeometry):
             if th1 + th2 > dim:
                 th1 = th2 = dim * .5
 
-            inner_corners[f'-{axis}'] = th1
-            inner_corners[axis] = th2
-            inner_dims[axis] = dim - th1 - th2
+            self.inner_corners[f'-{axis}'] = th1
+            self.inner_corners[axis] = th2
+            self.inner_dims[axis] = dim - th1 - th2
 
-        return inner_corners, inner_dims
+        pts = [(self.inner_corners[f'-{s}'] - self.inner_corners[s]) for s in 'xyz']
+        self.inner_center = Point3(*pts) * 0.5
 
-    def get_geom_node(self):
+    def define_variables(self):
         self.dims = (self.width, self.depth, self.height)
         self.segs = {'x': self.segs_w, 'y': self.segs_d, 'z': self.segs_z}
 
@@ -219,31 +224,55 @@ class Box(ProceduralGeometry):
         }
 
         if self.thickness > 0:
-            outer_details = [
+            outer_box_details = [
                 ['x', self.width, self.open_left, self.open_right],
                 ['y', self.depth, self.open_back, self.open_front],
                 ['z', self.height, self.open_bottom, self.open_top]
             ]
-            self.inner_corners, self.inner_dims = self.get_inner_details(outer_details)
+            self.define_inner_details(outer_box_details)
+
+        # if self.thickness > 0:
+            # self.define_inner_details(outer_box_details)
+
+    def calc_inner_box_center(self):
+        pts = [(self.inner_corners[f'-{s}'] - self.inner_corners[s]) for s in 'xyz']
+        inner_center = Point3(*pts) * 0.5
+        center = inner_center + self.center
+        return center
+
+    def get_geom_node(self):
+        self.define_variables()
 
         # Create outer box sides.
         vdata_values = array.array('f', [])
         prim_indices = array.array('H', [])
         vertex_cnt = 0
 
-        vertex_cnt += self.create_sides(vdata_values, prim_indices)
+        vertex_cnt += self.create_sides(vertex_cnt, vdata_values, prim_indices)
 
-        # Create the inner box to connect it to the outer box.
+        # Create the inner box to connect it to the outer one.
         if self.thickness > 0:
-            box_maker = Box(*self.inner_dims.values(), *self.segs.values(), 0,
-                            not self.invert, *self.open_sides.values())
+            maker = Box(
+                width=self.inner_dims['x'],
+                depth=self.inner_dims['y'],
+                height=self.inner_dims['z'],
+                segs_w=self.segs_w,
+                segs_d=self.segs_d,
+                segs_z=self.segs_z,
+                thickness=0,
+                invert=not self.invert,
+                open_top=self.open_top,
+                open_bottom=self.open_bottom,
+                open_front=self.open_front,
+                open_back=self.open_back,
+                open_left=self.open_left,
+                open_right=self.open_right
+            )
 
             # Define the inner box center.
-            pts = [(self.inner_corners[f'-{s}'] - self.inner_corners[s]) for s in 'xyz']
-            inner_center = Point3(*pts) * 0.5
-            box_maker.center = inner_center + self.center
+            maker.center = self.calc_inner_box_center()
 
-            geom_node = box_maker.get_geom_node()
+            geom_node = maker.get_geom_node()
             self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
             return geom_node
 
