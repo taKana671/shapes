@@ -15,7 +15,7 @@ class Capsule(Cylinder):
             radius (float): the radius of the capsule; must be more than zero.
             inner_radius (float):
                 the radius of the capsule; must be less than radius or equal.
-                `top hemisphere height - bottom hemisphere height) * 0.5 <= radius - inner_radius'
+                'top hemisphere height - bottom hemisphere height) * 0.5 <= radius - inner_radius'
                 for example, if radius is 1.0, inner radius is 0.8.
             height (float): length of the capsule.
             segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3.

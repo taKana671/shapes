@@ -9,40 +9,33 @@ from panda3d.core import Vec3, Vec2, Point3, LColor, Vec4
 from panda3d.core import AmbientLight, DirectionalLight
 from panda3d.core import NodePath, TextNode
 from panda3d.core import load_prc_file_data
-from panda3d.core import TransparencyAttrib
 from panda3d.core import OrthographicLens, Camera, MouseWatcher, PGTop
+from panda3d.core import TransparencyAttrib, AntialiasAttrib
 from direct.gui.DirectGui import DirectEntry, DirectFrame, DirectLabel, DirectButton, OkDialog
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
 
-from panda3d.core import TransparencyAttrib, AntialiasAttrib
 
-from src.validation import validate
-from src import Cylinder, Sphere, Torus, Cone, Box, RightTriangularPrism, Plane
-
+from src import Cylinder
+from src import Sphere
+from src import Torus
+from src import Cone
+from src import Box
+from src import RightTriangularPrism
+from src import Plane
 from src import EllipticalPrism
 from src import Capsule
 from src import CapsulePrism, RoundedCornerBox
+from src.validation import validate
 
-
-# loadPrcFileData("", "textures-auto-power-2 #t")
-
-# load_prc_file_data("", """
-#     win-size 1200 600
-#     window-title ProceduralShapes
-#     textures-auto-power-2 #t
-# """)
-
+# Without 'framebuffer-multisample' and 'multisamples' settings,
+# there appears to be no effect of 'set_antialias(AntialiasAttrib.MAuto)'.
 load_prc_file_data("", """
     win-size 1200 600
     window-title ProceduralShapes
-    gl-coordinate-system default
-    window-title Panda3D Delivery Cart
-    filled-wireframe-apply-shader true
-    stm-max-views 8
-    stm-max-chunk-count 2048
     framebuffer-multisample 1
-    multisamples 2""")
+    multisamples 2
+    """)
 
 
 SHAPES = {
@@ -101,15 +94,11 @@ class ModelDisplay(ShowBase):
         self.disable_mouse()
         # self.setBackgroundColor(0.6, 0.6, 0.6)
         self.render.set_antialias(AntialiasAttrib.MAuto)
-
-        self.camera_root = NodePath('camera_root')
-        self.camera_root.reparent_to(self.render)
         self.setup_light()
 
-        self.is_rotating = True
-        self.show_wireframe = True
-
         # Create model display region.
+        self.camera_root = NodePath('camera_root')
+        self.camera_root.reparent_to(self.render)
         self.mw3d_node = self.create_display_region(Vec4(0.3, 1.0, 0.0, 0.91))
 
         # Create gui regions.
@@ -121,16 +110,19 @@ class ModelDisplay(ShowBase):
         self.gui.create_control_widgets(self.ctrl_aspect2d)
         self.gui.create_model_selector(self.slct_aspect2d)
 
+        # Define variables.
+        self.is_rotating = True
+        self.show_wireframe = True
+        self.dragging = False
+        self.before_mouse_pos = None
+        self.state = Status.SHOW_MODEL
+
         # Show default model.
         self.model_cls = Cone
         model_maker = self.model_cls()
         self.gui.set_default_values(model_maker)
         model = model_maker.create()
         self.dispay_model(model, hpr=Vec3(0, 0, 0))
-
-        self.dragging = False
-        self.before_mouse_pos = None
-        self.state = Status.SHOW_MODEL
 
         # self.accept('d', self.toggle_wireframe)
         # self.accept('r', self.toggle_rotation)
@@ -254,14 +246,11 @@ class ModelDisplay(ShowBase):
 
         return mw3d_node
 
-    def create_gui_region(self, size, name):
+    def create_gui_region(self, region_size, name):
         """Create the custom 2D region for gui.
             Args:
                 size (Vec4): Vec4(left, right, bottom, top)
         """
-
-        region_size = size
-
         region = self.win.make_display_region(region_size)
         region.set_sort(20)
         # region.set_clear_color((0.5, 0.5, 0.5, 1.))
@@ -274,7 +263,7 @@ class ModelDisplay(ShowBase):
         lens.set_near_far(-1000, 1000)
         cam.node().set_lens(lens)
 
-        gui_render2d = NodePath(f'{name}_render2d')
+        gui_render2d = NodePath(f'render2d_{name}')
         gui_render2d.set_depth_test(False)
         gui_render2d.set_depth_write(False)
 
@@ -417,12 +406,12 @@ class ModelDisplay(ShowBase):
 
 class Frame(DirectFrame):
 
-    def __init__(self, parent, size, pos, frame_color):
+    def __init__(self, parent, size):
         super().__init__(
             parent=parent,
             frameSize=size,
-            frameColor=frame_color,
-            pos=pos,
+            frameColor=Gui.frame_color,
+            pos=Point3(0, 0, 0),
             relief=DGG.SUNKEN,
             borderWidth=(0.01, 0.01)
         )
@@ -432,10 +421,11 @@ class Frame(DirectFrame):
 
 class Gui:
 
+    frame_color = LColor(0.6, 0.6, 0.6, 1)
+    text_color = LColor(1.0, 1.0, 1.0, 1.0)
+
     def __init__(self):
         self.font = base.loader.load_font('fonts/DejaVuSans.ttf')
-        self.frame_color = LColor(0.6, 0.6, 0.6, 1)
-        self.text_color = LColor(1.0, 1.0, 1.0, 1.0)
         self.text_size = 0.05
 
         base.accept('tab', self.change_focus, [True])
@@ -445,8 +435,6 @@ class Gui:
         frame = Frame(
             parent,
             Vec4(-0.6, 0.6, -1., 1.),  # (left, right, bottom, top)
-            Point3(0, 0, 0),
-            self.frame_color
         )
 
         last_z = self.create_input_boxes(frame)
@@ -456,8 +444,6 @@ class Gui:
         frame = Frame(
             parent,
             Vec4(-1.4, 1.4, -0.09, 0.09),  # (left, right, bottom, top)
-            Point3(0, 0, 0),
-            self.frame_color
         )
 
         self.create_model_select_btns(frame)

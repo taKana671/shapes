@@ -214,7 +214,7 @@ class Sphere(ProceduralGeometry):
 
     def create_bottom(self, index_offset, vdata_values, prim_indices):
         vertex_cnt = 0
-       
+
         cap = SimpleNamespace(
             z=self.bottom_height,
             segs=self.segs_bc,
