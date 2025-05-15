@@ -5,7 +5,7 @@ In addition to generating basic 3D shapes, you can create many variations by cha
 For example, you can make them hollow inside or cut them like a pie.
 Currently, the following 3D shapes can be created, but I plan to add more in the future. 
 A model editor `model_display.py` allows you to create a 3D model while seeing how the shape changes as you change the parameters.  
-And this repositroy is also a submodule for [DeliveryCart](https://github.com/taKana671/DeliveryCart) and [MazeLand](https://github.com/taKana671/MazeLand).
+And this repositroy is also a submodule for [DeliveryCart](https://github.com/taKana671/DeliveryCart) and [VoronoiCity](https://github.com/taKana671/VoronoiCity).
 
 ![Image](https://github.com/user-attachments/assets/b4db70b2-81be-4556-b81d-2f1c36a9ffde)
 ![Image](https://github.com/user-attachments/assets/68fe25b1-160a-4e0c-ba40-936df18b9279)
