@@ -42,7 +42,6 @@ class Box(ProceduralGeometry):
         self.open_bottom = open_bottom
         self.open_front = open_front
         self.open_back = open_back
-
         self.center = Point3(0, 0, 0)
         self.invert = invert
 
@@ -186,13 +185,7 @@ class Box(ProceduralGeometry):
 
         return vertex_cnt
 
-    # def define_inner_details(self):
     def define_inner_details(self, outer_box_details):
-        # outer_box_details = [
-        #     ['x', self.width, self.open_left, self.open_right],
-        #     ['y', self.depth, self.open_back, self.open_front],
-        #     ['z', self.height, self.open_bottom, self.open_top]
-        # ]
         self.inner_corners = {}
         self.inner_dims = {}
 
@@ -230,9 +223,6 @@ class Box(ProceduralGeometry):
                 ['z', self.height, self.open_bottom, self.open_top]
             ]
             self.define_inner_details(outer_box_details)
-
-        # if self.thickness > 0:
-            # self.define_inner_details(outer_box_details)
 
     def calc_inner_box_center(self):
         pts = [(self.inner_corners[f'-{s}'] - self.inner_corners[s]) for s in 'xyz']
