@@ -46,13 +46,6 @@ class Torus(ProceduralGeometry):
         self.invert = invert
 
     def create_mantle(self, vdata_values, prim_indices):
-        # invert = self.invert
-        # section_radius = self.section_radius
-
-        # if not outer:
-        #     invert = not self.invert
-        #     section_radius = self.section_inner_radius
-
         n = 0 if self.invert else self.ring_slice_rad
         direction = -1 if self.invert else 1
         vertex_cnt = 0
