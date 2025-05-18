@@ -50,9 +50,7 @@ class Capsule(Cylinder):
         self.top_hemisphere = top_hemisphere
         self.bottom_hemisphere = bottom_hemisphere
 
-    def create_bottom(self, vdata_values, prim_indices):
-        vertex_cnt = 0
-
+    def create_bottom(self, vertex_cnt, vdata_values, prim_indices): 
         if self.bottom_hemisphere:
             self.b_hemi = CapsuleHemisphere(
                 center=Point3(0, 0, 0),
@@ -73,8 +71,9 @@ class Capsule(Cylinder):
 
         # Create bottom cap as well as cylinder, if bottom hemisphere is not be created.
         if self.segs_bc:
-            vertex_cnt = self.create_bottom_cap_triangles(vdata_values, prim_indices)
-            vertex_cnt += self.create_bottom_cap_quads(vdata_values, prim_indices)
+            cnt = vertex_cnt
+            vertex_cnt += self.create_bottom_cap_triangles(cnt, vdata_values, prim_indices)
+            vertex_cnt += self.create_bottom_cap_quads(cnt, vdata_values, prim_indices)
             return vertex_cnt
 
         return vertex_cnt
@@ -127,7 +126,8 @@ class Capsule(Cylinder):
         prim_indices = array.array('H', [])
         vertex_cnt = 0
 
-        vertex_cnt = self.create_bottom(vdata_values, prim_indices)
+        # vertex_cnt = self.create_bottom(vdata_values, prim_indices)
+        vertex_cnt = self.create_bottom(vertex_cnt, vdata_values, prim_indices)
         vertex_cnt += self.create_mantle_quads(vertex_cnt, vdata_values, prim_indices)
         vertex_cnt = self.create_top(vertex_cnt, vdata_values, prim_indices)
 
