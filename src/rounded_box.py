@@ -255,11 +255,13 @@ class RoundedCornerBox(RoundedBox):
         self.rb_left = rounded_b_left
         self.rb_right = rounded_b_right
 
-    def create_rect(self, vertex_cnt, vdata_values, prim_indices, width, depth, center, open_sides):
+    # def create_rect(self, vertex_cnt, vdata_values, prim_indices, width, depth, center, open_sides):
+    def create_rect(self, vertex_cnt, vdata_values, prim_indices, width, depth, height, center, open_sides):
         rect = RoundedCornerBox(
             width=width,
             depth=depth,
-            height=self.height,
+            # height=self.height,
+            height=height,
             segs_w=3,
             segs_d=3,
             segs_z=self.segs_z,
@@ -328,7 +330,7 @@ class RoundedCornerBox(RoundedBox):
                 open_sides = dict(open_left=True, open_back=True)
 
         vertex_cnt = self.create_rect(
-            vertex_cnt, vdata_values, prim_indices, self.c_radius, self.c_radius, center, open_sides)
+            vertex_cnt, vdata_values, prim_indices, self.c_radius, self.c_radius, self.height, center, open_sides)
         return vertex_cnt
 
     def create_rect_sides(self, vertex_cnt, vdata_values, prim_indices, side):
@@ -358,7 +360,7 @@ class RoundedCornerBox(RoundedBox):
                 open_sides = dict(open_left=True, open_right=True, open_back=True)
 
         vertex_cnt = self.create_rect(
-            vertex_cnt, vdata_values, prim_indices, w, d, center, open_sides)
+            vertex_cnt, vdata_values, prim_indices, w, d, self.height, center, open_sides)
         return vertex_cnt
 
     def create_corners(self, vertex_cnt, vdata_values, prim_indices):
@@ -368,7 +370,7 @@ class RoundedCornerBox(RoundedBox):
             [Sides.BACK_RIGHT, self.rb_right, Sides.RIGHT],
             [Sides.FRONT_RIGHT, self.rf_right, Sides.FRONT]
         ]
-
+        # import pdb; pdb.set_trace()
         for corner, is_rounded, side in li:
             # create a rounded or box corner.
             if is_rounded:
@@ -392,6 +394,7 @@ class RoundedCornerBox(RoundedBox):
         self._depth = self.depth - self.c_radius * 2
         self._width = self.width - self.c_radius * 2
         self.dims = (self.width, self._depth, self.height)
+
         self.segs = {'x': self.segs_w, 'y': self.segs_d, 'z': self.segs_z}
 
         self.open_sides = {
