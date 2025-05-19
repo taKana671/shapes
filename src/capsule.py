@@ -126,7 +126,6 @@ class Capsule(Cylinder):
         prim_indices = array.array('H', [])
         vertex_cnt = 0
 
-        # vertex_cnt = self.create_bottom(vdata_values, prim_indices)
         vertex_cnt = self.create_bottom(vertex_cnt, vdata_values, prim_indices)
         vertex_cnt += self.create_mantle_quads(vertex_cnt, vdata_values, prim_indices)
         vertex_cnt = self.create_top(vertex_cnt, vdata_values, prim_indices)
