@@ -6,29 +6,19 @@ from .rounded_box import Sides, RoundedBox
 # from .rounded_box import BoxEdgeCylinder
 
 
+class MatchSide:
 
-# class RoundedEdgeBox(RoundedCornerBox):
+    def __init__(self, side):
+        self.side = side
 
-    # def __init__(self, corner_radius=0.5, width=2., depth=2., height=2., segs_w=4, segs_d=4, segs_z=4,
-    #              thickness=0., open_top=False, open_bottom=False, invert=False):
-    #     super().__init__(
-    #         corner_radius=corner_radius,
-    #         width=width,
-    #         depth=depth,
-    #         height=height,
-    #         segs_w=segs_w,
-    #         segs_d=segs_d,
-    #         segs_z=segs_z,
-    #         thickness=thickness,
-    #         open_top=open_top,
-    #         open_bottom=open_bottom,
-    #         invert=invert
-    #     )
+    def __eq__(self, side):
+        return side in self.side
+
 
 class RoundedEdgeBox(RoundedBox):
 
-    def __init__(self, width=4., depth=4., height=4., segs_w=4, segs_d=4, segs_z=4,
-                 thickness=0., open_top=False, open_bottom=False, invert=False, corner_radius=0.5):
+    def __init__(self, width=4., depth=4., height=4., segs_w=1, segs_d=1, segs_z=1,
+                 thickness=0.2, open_top=True, open_bottom=False, invert=False, corner_radius=1):
 
         super().__init__(
             width=width,
@@ -42,27 +32,20 @@ class RoundedEdgeBox(RoundedBox):
             open_top=True if thickness > 0 else open_top,
             open_bottom=True if thickness > 0 else open_bottom
         )
-
         self.c_radius = corner_radius
 
-    def create_side_rect(self, vertex_cnt, vdata_values, prim_indices,
-                         width, depth, height, center, open_sides):
+    def create_rect(self, vertex_cnt, vdata_values, prim_indices,
+                    width, depth, height, center, open_sides):
         rect = RoundedEdgeBox(
             width=width,
             depth=depth,
-            # height=self.height,
             height=height,
             segs_w=3,
             segs_d=3,
             segs_z=self.segs_z,
-            thickness=self.thickness,
-            # open_top=self.open_top,
-            # open_bottom=self.open_bottom,
+            # thickness=self.thickness,
+            thickness=0,
             corner_radius=0,
-            # rounded_f_left=False,
-            # rounded_f_right=False,
-            # rounded_b_left=False,
-            # rounded_b_right=False,
             invert=self.invert
         )
 
@@ -74,227 +57,130 @@ class RoundedEdgeBox(RoundedBox):
         vertex_cnt = rect.create_sides(vertex_cnt, vdata_values, prim_indices)
         return vertex_cnt
 
-    def create_bottom(self, vertex_cnt, vdata_values, prim_indices):
+    def create_rounded_corner(self, vertex_cnt, vdata_values, prim_indices, side):
+        z = self._height * 0.5 * (-1 if Sides.BOTTOM in side else 1)
+        center = Point3(0, 0, z)
+        x, y = self._width * 0.5, self._depth * 0.5
 
-        # center = Point3(0, 0, -(self.height + self.c_radius) / 2)
-        # open_sides = dict(open_left=True, open_right=True, open_front=True, open_back=True, open_top=True)
-        # vertex_cnt = self.create_side_rect(
-        #     vertex_cnt, vdata_values, prim_indices, self._width, self._depth, self.c_radius, center, open_sides)
+        match MatchSide(side):
 
-        center = Point3(self._width * 0.5, -self._depth * 0.5, -self._height * 0.5)
-        start_angle = 0
-        slice_deg = 270
+            case Sides.BACK_RIGHT:
+                start_angle = 0
+                center.xy = Point2(x, -y)
 
-        vertex_cnt += self.create_corner_sphere(
-            vertex_cnt, vdata_values, prim_indices, center, start_angle, slice_deg,
-            bottom_clip=-1., top_clip=0)
+            case Sides.FRONT_RIGHT:
+                start_angle = 90 if not self.invert else 270
+                center.xy = Point2(x, y)
 
+            case Sides.FRONT_LEFT:
+                start_angle = 180
+                center.xy = Point2(-x, y)
 
-        center = Point3(self._width * 0.5, self._depth * 0.5, -self._height * 0.5)
-        start_angle = 90
-        slice_deg = 270
-        vertex_cnt += self.create_corner_sphere(
-            vertex_cnt, vdata_values, prim_indices, center, start_angle, slice_deg,
-            bottom_clip=-1., top_clip=0)
+            case Sides.BACK_LEFT:
+                start_angle = 270 if not self.invert else 90
+                # start_angle = 270
+                center.xy = Point2(-x, -y)
 
+        bottom_clip = -1 if Sides.BOTTOM in side else 0
+        top_clip = 0 if Sides.BOTTOM in side else 1
 
-        center = Point3(-self._width * 0.5, self._depth * 0.5, -self._height * 0.5)
-        start_angle = 180
-        slice_deg = 270
-        vertex_cnt += self.create_corner_sphere(
-            vertex_cnt, vdata_values, prim_indices, center, start_angle, slice_deg,
-            bottom_clip=-1., top_clip=0)
-
-
-
-        center = Point3(-self._width * 0.5, -self._depth * 0.5, -self._height * 0.5)
-        start_angle = 270
-        slice_deg = 270
-        vertex_cnt += self.create_corner_sphere(
-            vertex_cnt, vdata_values, prim_indices, center, start_angle, slice_deg,
-            bottom_clip=-1., top_clip=0)
-
-
-        # left
-        x_axis = False
-        height = self._depth
-        start_angle = 270
-        slice_deg = 270
-        center = Point3(-self._width * 0.5, -self._depth * 0.5, -self._height * 0.5)
-        vertex_cnt = self.create_horizontal_rounded_edge(
-            vertex_cnt, vdata_values, prim_indices, height, center, start_angle, slice_deg, x_axis
+        vertex_cnt = self.create_corner_sphere(
+            vertex_cnt, vdata_values, prim_indices, center, start_angle, 270,
+            bottom_clip=bottom_clip, top_clip=top_clip
         )
-
-        # back
-        x_axis = True
-        height = self._width
-        start_angle = 270
-        slice_deg = 270
-        center = Point3(-self._width * 0.5, -self._depth * 0.5, -self._height * 0.5)
-        vertex_cnt = self.create_horizontal_rounded_edge(
-            vertex_cnt, vdata_values, prim_indices, height, center, start_angle, slice_deg, x_axis
-        )
-
-
-        # right
-        x_axis = False
-        height = self._depth
-        start_angle = 180
-        slice_deg = 270
-        center = Point3(self._width * 0.5, -self._depth * 0.5, -self._height * 0.5)
-        vertex_cnt = self.create_horizontal_rounded_edge(
-            vertex_cnt, vdata_values, prim_indices, height, center, start_angle, slice_deg, x_axis
-        )
-
-        # front
-        x_axis = True
-        height = self._width
-        start_angle = 0
-        slice_deg = 270
-        center = Point3(-self._width * 0.5, self._depth * 0.5, -self._height * 0.5)
-        vertex_cnt = self.create_horizontal_rounded_edge(
-            vertex_cnt, vdata_values, prim_indices, height, center, start_angle, slice_deg, x_axis
-        )
-
-
-        center = Point3(0, 0, -(self._height + self.c_radius) / 2)
-        open_sides = dict(open_left=True, open_right=True, open_front=True, open_back=True, open_top=True)
-        vertex_cnt = self.create_side_rect(
-            vertex_cnt, vdata_values, prim_indices, self._width, self._depth, self.c_radius, center, open_sides)
 
         return vertex_cnt
 
-    def create_corner_spheres(self, vertex_cnt, vdata_values, prim_indices, side, bottom=True):
-        bottom_clip, top_clip = -1, 1
+    def create_horizontal_rounded_edge(self, vertex_cnt, vdata_values, prim_indices, side):
+        z = self._height * 0.5 * (-1 if Sides.BOTTOM in side else 1)
+        center = Point3(0, 0, z)
+        x, y = self._width * 0.5, self._depth * 0.5
 
-        if bottom:
-            top_clip = 0
-            z = -self._height * 0.5
-        else:
-            bottom_clip = 0
-            z = self.height * 0.5
+        match MatchSide(side):
 
-        
-    
-    
-    
-    def create_top(self, vertex_cnt, vdata_values, prim_indices):
-
-        # center = Point3(0, 0, -(self.height + self.c_radius) / 2)
-        # open_sides = dict(open_left=True, open_right=True, open_front=True, open_back=True, open_top=True)
-        # vertex_cnt = self.create_side_rect(
-        #     vertex_cnt, vdata_values, prim_indices, self._width, self._depth, self.c_radius, center, open_sides)
-
-        center = Point3(self._width * 0.5, -self._depth * 0.5, self._height * 0.5)
-        start_angle = 0
-        slice_deg = 270
-
-        vertex_cnt += self.create_corner_sphere(
-            vertex_cnt, vdata_values, prim_indices, center, start_angle, slice_deg,
-            bottom_clip=0., top_clip=1)
+            case Sides.LEFT:
+                x_axis = False
+                height = self._depth
+                # start_angle = 0 if Sides.TOP in side else 270
+                if Sides.TOP in side:
+                    start_angle = 0
+                else:
+                    start_angle = 270 if not self.invert else 90
+                #  270
 
 
-        center = Point3(self._width * 0.5, self._depth * 0.5, self._height * 0.5)
-        start_angle = 90
-        slice_deg = 270
-        vertex_cnt += self.create_corner_sphere(
-            vertex_cnt, vdata_values, prim_indices, center, start_angle, slice_deg,
-            bottom_clip=0, top_clip=1)
+                center.xy = Point2(-x, -y)
+
+            case Sides.BACK:
+                x_axis = True
+                height = self._width
+                # start_angle = 180 if Sides.TOP in side else 270
+
+                if Sides.TOP in side:
+                    start_angle = 180
+                else:
+                    start_angle = 270 if not self.invert else 90
 
 
-        center = Point3(-self._width * 0.5, self._depth * 0.5, self._height * 0.5)
-        start_angle = 180
-        slice_deg = 270
-        vertex_cnt += self.create_corner_sphere(
-            vertex_cnt, vdata_values, prim_indices, center, start_angle, slice_deg,
-            bottom_clip=0, top_clip=1)
+                center.xy = Point2(-x, -y)
+
+            case Sides.RIGHT:
+                x_axis = False
+                height = self._depth
+                # start_angle = 90 if Sides.TOP in side else 180
+                if Sides.TOP in side:
+                    start_angle = 90 if not self.invert else 270
+                else:
+                    start_angle = 180
+
+
+                center.xy = Point2(x, -y)
+
+            case Sides.FRONT:
+                x_axis = True
+                height = self._width
+                # start_angle = 90 if Sides.TOP in side else 0
+
+                if Sides.TOP in side:
+                    start_angle = 90 if not self.invert else 270
+                else:
+                    start_angle = 0
 
 
 
-        center = Point3(-self._width * 0.5, -self._depth * 0.5, self._height * 0.5)
-        start_angle = 270
-        slice_deg = 270
-        vertex_cnt += self.create_corner_sphere(
-            vertex_cnt, vdata_values, prim_indices, center, start_angle, slice_deg,
-            bottom_clip=0, top_clip=1)
+                center.xy = Point2(-x, y)
 
-
-        # left
-        x_axis = False
-        height = self._depth
-        start_angle = 0
-        slice_deg = 270
-        center = Point3(-self._width * 0.5, -self._depth * 0.5, self._height * 0.5)
-        vertex_cnt = self.create_horizontal_rounded_edge(
-            vertex_cnt, vdata_values, prim_indices, height, center, start_angle, slice_deg, x_axis
+        vertex_cnt = self.create_horizontal_edge_cylinder(
+            vertex_cnt, vdata_values, prim_indices, height, center, start_angle, 270, x_axis
         )
-
-        # back
-        x_axis = True
-        height = self._width
-        start_angle = 180
-        slice_deg = 270
-        center = Point3(-self._width * 0.5, -self._depth * 0.5, self._height * 0.5)
-        vertex_cnt = self.create_horizontal_rounded_edge(
-            vertex_cnt, vdata_values, prim_indices, height, center, start_angle, slice_deg, x_axis
-        )
-
-
-        # right
-        x_axis = False
-        height = self._depth
-        start_angle = 90
-        slice_deg = 270
-        center = Point3(self._width * 0.5, -self._depth * 0.5, self._height * 0.5)
-        vertex_cnt = self.create_horizontal_rounded_edge(
-            vertex_cnt, vdata_values, prim_indices, height, center, start_angle, slice_deg, x_axis
-        )
-
-        # front
-        x_axis = True
-        height = self._width
-        start_angle = 90
-        slice_deg = 270
-        center = Point3(-self._width * 0.5, self._depth * 0.5, self._height * 0.5)
-        vertex_cnt = self.create_horizontal_rounded_edge(
-            vertex_cnt, vdata_values, prim_indices, height, center, start_angle, slice_deg, x_axis
-        )
-
-
-        center = Point3(0, 0, (self._height + self.c_radius) / 2)
-        open_sides = dict(open_left=True, open_right=True, open_front=True, open_back=True, open_bottom=True)
-        vertex_cnt = self.create_side_rect(
-            vertex_cnt, vdata_values, prim_indices, self._width, self._depth, self.c_radius, center, open_sides)
-
         return vertex_cnt
 
-    def create_rounded_corners(self, vertex_cnt, vdata_values, prim_indices, side):
+    def create_vertical_rounded_edge(self, vertex_cnt, vdata_values, prim_indices, side):
         center = Point3(0, 0, -self._height * 0.5)
 
         match side:
             case Sides.FRONT_LEFT:
-                angle = 180
+                start_angle = 180
                 center.xy = Point2(-self._width, self._depth) * 0.5
 
             case Sides.BACK_LEFT:
-                angle = 270 if not self.invert else 90
+                start_angle = 270 if not self.invert else 90
                 center.xy = Point2(-self._width, -self._depth) * 0.5
 
             case Sides.BACK_RIGHT:
-                angle = 0
+                start_angle = 0
                 center.xy = Point2(self._width, -self._depth) * 0.5
 
             case Sides.FRONT_RIGHT:
-                angle = 90 if not self.invert else 270
+                start_angle = 90 if not self.invert else 270
                 center.xy = Point2(self._width, self._depth) * 0.5
 
-        vertex_cnt = self.create_vertical_rounded_edge(
-            vertex_cnt, vdata_values, prim_indices, self._height, center, angle, 270
+        vertex_cnt = self.create_vertical_edge_cylinder(
+            vertex_cnt, vdata_values, prim_indices, self._height, center, start_angle, 270
         )
         return vertex_cnt
 
-
-    def create_rect_sides(self, vertex_cnt, vdata_values, prim_indices, side):
+    def create_rect_side(self, vertex_cnt, vdata_values, prim_indices, side):
         common_open_sides = dict(open_top=True, open_bottom=True)
         center = Point3()
         x = (self._width + self.c_radius) * 0.5
@@ -321,33 +207,116 @@ class RoundedEdgeBox(RoundedBox):
                 w, d = self._width, self.c_radius
                 open_sides = dict(open_left=True, open_right=True, open_back=True)
 
-        # import pdb; pdb.set_trace()
         open_sides = {**open_sides, **common_open_sides}
-        vertex_cnt = self.create_side_rect(
-            vertex_cnt, vdata_values, prim_indices, w, d, self._height, center, open_sides)
+        vertex_cnt = self.create_rect(
+            vertex_cnt, vdata_values, prim_indices, w, d, self._height, center, open_sides
+        )
         return vertex_cnt
 
-    def create_corners(self, vertex_cnt, vdata_values, prim_indices):
+    def create_rect_edges(self, vertex_cnt, vdata_values, prim_indices, t_or_b):
+        """Args:
+                t_or_b (Sides): Sides.TOP or Sides.BOTTOM
+        """
+        for side in [Sides.BACK_RIGHT, Sides.FRONT_RIGHT, Sides.FRONT_LEFT, Sides.BACK_LEFT]:
+            vertex_cnt += self.create_rounded_corner(
+                vertex_cnt, vdata_values, prim_indices, t_or_b | side
+            )
+
+        for side in [Sides.LEFT, Sides.BACK, Sides.RIGHT, Sides.FRONT]:
+            vertex_cnt = self.create_horizontal_rounded_edge(
+                vertex_cnt, vdata_values, prim_indices, t_or_b | side
+            )
+
+        return vertex_cnt
+
+    def create_bottom(self, vertex_cnt, vdata_values, prim_indices):
+        # if self.open_bottom:
+        #     open_sides = dict(open_bottom=True, open_top=True)
+        # else:
+        #     open_sides.update(open_left=True, open_right=True, open_front=True, open_back=True, open_top=True)
+
+        # z = -(self._height + self.c_radius) * 0.5
+        # center = Point3(0, 0, z)
+        # vertex_cnt = self.create_rect(
+        #     vertex_cnt, vdata_values, prim_indices, self._width, self._depth, self.c_radius, center, open_sides)
+
+        # vertex_cnt = self.create_rect_edges(vertex_cnt, vdata_values, prim_indices, Sides.BOTTOM)
+
+        # return vertex_cnt
+
+       
+        # center = Point3(0, 0, -(self.height - self.thickness) * 0.5)
+        # open_sides = dict(open_bottom=True, open_top=True)
+        # vertex_cnt = self.create_rect(
+        #     vertex_cnt, vdata_values, prim_indices, self._width, self._depth, self.thickness, center, open_sides)
+
+
+        vertex_cnt = self.create_rect_edges(vertex_cnt, vdata_values, prim_indices, Sides.BOTTOM)
+
+        if not self.open_top:
+            center = Point3(0, 0, -(self._height + self.c_radius) / 2)
+            open_sides = dict(open_left=True, open_right=True, open_front=True, open_back=True, open_top=True)
+            vertex_cnt = self.create_rect(
+                vertex_cnt, vdata_values, prim_indices, self._width, self._depth, self.c_radius, center, open_sides)
+
+        return vertex_cnt
+
+    def create_middle(self, vertex_cnt, vdata_values, prim_indices):
+        # if self.c_radius > 0:
         li = [
             [Sides.FRONT_LEFT, Sides.LEFT],
             [Sides.BACK_LEFT, Sides.BACK],
             [Sides.BACK_RIGHT, Sides.RIGHT],
             [Sides.FRONT_RIGHT, Sides.FRONT]
         ]
-        # import pdb; pdb.set_trace()
+
         for corner, side in li:
             # create a rounded or box corner.
-            # if is_rounded:
-            vertex_cnt = self.create_rounded_corners(
+            vertex_cnt = self.create_vertical_rounded_edge(
                 vertex_cnt, vdata_values, prim_indices, corner)
-            # else:
-            #     vertex_cnt = self.create_rect_corners(
-            #         vertex_cnt, vdata_values, prim_indices, corner)
 
             # create a side box.
-            vertex_cnt = self.create_rect_sides(
+            vertex_cnt = self.create_rect_side(
                 vertex_cnt, vdata_values, prim_indices, side)
 
+        return vertex_cnt
+
+        open_sides = dict(open_top=True, open_bottom=True)
+        vertex_cnt = self.create_rect(
+            vertex_cnt, vdata_values, prim_indices, self._width, self._depth, self._height,
+            self.center, open_sides
+        )
+        return vertex_cnt
+
+    def create_top(self, vertex_cnt, vdata_values, prim_indices):
+        # if self.open_top:
+        #     open_sides = dict(open_bottom=True, open_top=True)
+        # else:
+        #     open_sides = dict(open_left=True, open_right=True, open_front=True, open_back=True, open_bottom=True)
+
+        # z = (self._height + self.c_radius) / 2
+        # center = Point3(0, 0, z)
+        # vertex_cnt = self.create_rect(
+        #     vertex_cnt, vdata_values, prim_indices, self._width, self._depth, self.c_radius, center, open_sides)
+
+        # vertex_cnt = self.create_rect_edges(vertex_cnt, vdata_values, prim_indices, Sides.TOP)
+
+        # return vertex_cnt
+        # if self.thickness:
+        #     center = Point3(0, 0, (self.height / 2 - self.thickness / 2))
+        #     open_sides = dict(open_bottom=True, open_top=True)
+        #     vertex_cnt = self.create_rect(
+        #         vertex_cnt, vdata_values, prim_indices, self._width, self._depth, self.thickness, center, open_sides)
+
+        if not self.open_top:
+            center = Point3(0, 0, (self._height + self.c_radius) / 2)
+            open_sides = dict(open_left=True, open_right=True, open_front=True, open_back=True, open_bottom=True)
+            vertex_cnt = self.create_rect(
+                vertex_cnt, vdata_values, prim_indices, self._width, self._depth, self.c_radius, center, open_sides)
+
+        vertex_cnt = self.create_rect_edges(vertex_cnt, vdata_values, prim_indices, Sides.TOP)
+        
+        
         return vertex_cnt
 
 
@@ -386,7 +355,7 @@ class RoundedEdgeBox(RoundedBox):
         # self.c_segs_bc = 0 if self.thickness <= 0 and self.open_bottom else self.segs_d
         self.c_segs_tc = 0
         self.c_segs_bc = 0
-    
+
     def get_geom_node(self):
         self.define_variables()
 
@@ -395,43 +364,35 @@ class RoundedEdgeBox(RoundedBox):
         prim_indices = array.array('H', [])
         vertex_cnt = 0
 
+        vertex_cnt = self.create_middle(vertex_cnt, vdata_values, prim_indices)
         vertex_cnt = self.create_bottom(vertex_cnt, vdata_values, prim_indices)
-        # center box
-        # vertex_cnt += self.create_sides(vertex_cnt, vdata_values, prim_indices)
-
-        vertex_cnt = self.create_corners(vertex_cnt, vdata_values, prim_indices)
         vertex_cnt = self.create_top(vertex_cnt, vdata_values, prim_indices)
-        
-        
-        
+
         # if self.c_radius > 0:
         #     vertex_cnt = self.create_corners(vertex_cnt, vdata_values, prim_indices)
 
-        # if self.thickness > 0:
-        #     maker = RoundedCornerBox(
-        #         width=self._width + self.c_inner_radius * 2,
-        #         depth=self._depth + self.c_inner_radius * 2,
-        #         height=self.height,
-        #         segs_w=self.segs_w,
-        #         segs_d=self.segs_d,
-        #         segs_z=self.segs_z,
-        #         thickness=0,
-        #         open_top=True,
-        #         open_bottom=True,
-        #         invert=not self.invert,
-        #         corner_radius=self.c_inner_radius,
-        #         rounded_f_left=self.rf_left,
-        #         rounded_f_right=self.rf_right,
-        #         rounded_b_left=self.rb_left,
-        #         rounded_b_right=self.rb_right
-        #     )
+        if self.thickness > 0:
+            maker = RoundedEdgeBox(
+                width=self._width + self.c_inner_radius * 2,
+                depth=self._depth + self.c_inner_radius * 2,
+                height=self._height + self.c_inner_radius * 2,
+                segs_w=self.segs_w,
+                segs_d=self.segs_d,
+                segs_z=self.segs_z,
+                thickness=0,
+                open_top=True,
+                open_bottom=True,
+                invert=not self.invert,
+                # corner_radius=self.c_radius
+                corner_radius=self.c_inner_radius,
+            )
 
-        #     # Define the inner box center.
-        #     maker.center = self.calc_inner_box_center()
+            # Define the inner box center.
+            maker.center = self.calc_inner_box_center()
 
-            # geom_node = maker.get_geom_node()
-            # self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
-            # return geom_node
+            geom_node = maker.get_geom_node()
+            self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
+            return geom_node
 
         # Create the geom node.
         geom_node = self.create_geom_node(
