@@ -29,7 +29,7 @@ class RoundedEdgeBox(RoundedBox):
     """
 
     def __init__(self, width=4., depth=4., height=4., segs_w=4, segs_d=1, segs_z=2,
-                 thickness=0.5, corner_radius=1, invert=False):
+                 thickness=0., corner_radius=0.5, invert=False):
         super().__init__(
             width=width,
             depth=depth,
