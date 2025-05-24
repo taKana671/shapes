@@ -50,7 +50,7 @@ class Capsule(Cylinder):
         self.top_hemisphere = top_hemisphere
         self.bottom_hemisphere = bottom_hemisphere
 
-    def create_bottom(self, vertex_cnt, vdata_values, prim_indices): 
+    def create_bottom(self, vertex_cnt, vdata_values, prim_indices):
         if self.bottom_hemisphere:
             self.b_hemi = CapsuleHemisphere(
                 center=Point3(0, 0, 0),

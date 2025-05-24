@@ -177,10 +177,6 @@ class Box(ProceduralGeometry):
 
                 if self.open_sides[side_id]:
                     if self.thickness > 0:
-                        if plane_id in ('zx', 'yz'):
-                            continue
-
-                    if self.thickness > 0:
                         vertex_cnt += self.create_thick_side(vertex_cnt, vdata_values, prim_indices, direction, is_front,
                                                              vertex, normal, name, index, offset, segments)
                 else:

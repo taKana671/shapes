@@ -6,7 +6,7 @@ from .rounded_box import Sides, RoundedBox
 
 
 class RoundedCornerBox(RoundedBox):
-    """Create a geom node of capsule prism.
+    """Create a geom node of rounded corner box.
         Args:
             width (float): dimension along the x-axis; more than zero.
             depth (float): dimension along the y-axis; more than zero.
@@ -99,7 +99,7 @@ class RoundedCornerBox(RoundedBox):
                 angle = 90 if not self.invert else 270
                 center.xy = Point2(self._width, self._depth) * 0.5
 
-        vertex_cnt = self.create_vertical_rounded_edge(
+        vertex_cnt = self.create_vertical_edge_cylinder(
             vertex_cnt, vdata_values, prim_indices, self.height, center, angle, 270
         )
         return vertex_cnt
@@ -169,7 +169,7 @@ class RoundedCornerBox(RoundedBox):
             [Sides.BACK_RIGHT, self.rb_right, Sides.RIGHT],
             [Sides.FRONT_RIGHT, self.rf_right, Sides.FRONT]
         ]
-        # import pdb; pdb.set_trace()
+
         for corner, is_rounded, side in li:
             # create a rounded or box corner.
             if is_rounded:
@@ -260,6 +260,6 @@ class RoundedCornerBox(RoundedBox):
 
         # Create the geom node.
         geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'box')
+            vertex_cnt, vdata_values, prim_indices, 'rounded_corner_box')
 
         return geom_node

@@ -43,26 +43,6 @@ class CapsulePrism(RoundedBox):
         self.rounded_left = rounded_left
         self.rounded_right = rounded_right
 
-    def create_left(self, vertex_cnt, vdata_values, prim_indices):
-        if self.rounded_left:
-            center = Point3(-self.width / 2, 0, -self.height / 2)
-            start_angle = 90 if self.invert else 270
-            vertex_cnt = self.create_vertical_rounded_edge(
-                vertex_cnt, vdata_values, prim_indices, self.height, center, start_angle, 180
-            )
-
-        return vertex_cnt
-
-    def create_right(self, vertex_cnt, vdata_values, prim_indices):
-        if self.rounded_right:
-            center = Point3(self.width / 2, 0, -self.height / 2)
-            start_angle = 270 if self.invert else 90
-            vertex_cnt = self.create_vertical_rounded_edge(
-                vertex_cnt, vdata_values, prim_indices, self.height, center, start_angle, 180
-            )
-
-        return vertex_cnt
-
     def create_rounded_corners(self, vertex_cnt, vdata_values, prim_indices, side):
         center = Point3(0, 0, -self.height * 0.5)
 
@@ -76,7 +56,7 @@ class CapsulePrism(RoundedBox):
                 center.x = self.width * 0.5
                 start_angle = 270 if self.invert else 90
 
-        vertex_cnt = self.create_vertical_rounded_edge(
+        vertex_cnt = self.create_vertical_edge_cylinder(
             vertex_cnt, vdata_values, prim_indices, self.height, center, start_angle, 180
         )
         return vertex_cnt
@@ -137,6 +117,6 @@ class CapsulePrism(RoundedBox):
 
         # Create the geom node.
         geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'box')
+            vertex_cnt, vdata_values, prim_indices, 'capsule_prism')
 
         return geom_node

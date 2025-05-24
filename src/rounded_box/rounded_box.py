@@ -7,8 +7,6 @@ from ..box import Box
 from ..cylinder import Cylinder
 from ..capsule import CapsuleHemisphere
 
-import numpy as np
-
 
 class Sides(Flag):
 
@@ -23,15 +21,6 @@ class Sides(Flag):
     FRONT_RIGHT = FRONT | RIGHT
     BACK_LEFT = BACK | LEFT
     BACK_RIGHT = BACK | RIGHT
-    
-    # TOP_FRONT_LEFT = TOP | FRONT_LEFT
-    # TOP_FRONT_RIGHT = TOP | FRONT_RIGHT
-    # TOP_BACK_LEFT = TOP | BACK_LEFT
-    # TOP_BACK_RIGHT = TOP | BACK_RIGHT
-    # BOTTOM_FRONT_LEFT = BOTTOM | FRONT_LEFT
-    # BOTTOM_FRONT_RIGHT = BOTTOM | FRONT_RIGHT
-    # BOTTOM_BACK_LEFT = BOTTOM | BACK_LEFT
-    # BOTTOM_BACK_RIGHT = BOTTOM | BACK_RIGHT
 
 
 class RoundedBox(Box):
@@ -64,7 +53,6 @@ class RoundedBox(Box):
 
         return vertex_cnt
 
-    # def create_corner(self, vertex_cnt, vdata_values, prim_indices, center, start_angle, slice_deg):
     def create_vertical_edge_cylinder(self, vertex_cnt, vdata_values, prim_indices,
                                       height, center, start_angle, slice_deg):
         corner = VerticalRoundedEdge(
@@ -73,7 +61,7 @@ class RoundedBox(Box):
             radius=self.c_radius,
             inner_radius=self.c_inner_radius,
             height=height,
-            segs_c=10,
+            segs_c=20,
             segs_a=self.segs_z,
             segs_top_cap=self.c_segs_tc,
             segs_bottom_cap=self.c_segs_bc,
@@ -85,7 +73,8 @@ class RoundedBox(Box):
         return vertex_cnt
 
     def create_horizontal_edge_cylinder(self, vertex_cnt, vdata_values, prim_indices,
-                                        height, center, start_angle, slice_deg, x_axis):
+                                        height, center, start_angle, slice_deg, x_axis,
+                                        start_slice_cap, end_slice_cap):
         edge = HorizontalRoundedEdge(
             center=center + self.center,
             start_angle_deg=start_angle,
@@ -97,22 +86,21 @@ class RoundedBox(Box):
             segs_top_cap=self.c_segs_tc,
             segs_bottom_cap=self.c_segs_bc,
             ring_slice_deg=slice_deg,
-            slice_caps_radial=0 if not self.thickness else 3,
-            slice_caps_axial=0 if not self.thickness else 3,
+            start_slice_cap=start_slice_cap,
+            end_slice_cap=end_slice_cap,
             invert=self.invert,
             x_axis=x_axis
         )
 
         vertex_cnt = edge.create_cylinder(vertex_cnt, vdata_values, prim_indices)
 
-        if edge.segs_sc_r:
+        if self.thickness:
             vertex_cnt += edge.create_slice_cap_quads(vertex_cnt, vdata_values, prim_indices)
 
         return vertex_cnt
 
     def create_corner_sphere(self, vertex_cnt, vdata_values, prim_indices, center,
                              start_angle, slice_deg, bottom_clip=-1., top_clip=1.):
-
         corner = QuarteredHemisphereCorner(
             center=center,
             start_angle_deg=start_angle,
@@ -136,8 +124,8 @@ class RoundedBox(Box):
 class VerticalRoundedEdge(Cylinder):
     """Creates a vertical box edge cylinder model.
        Args:
-            center (Point3): the center of a cylinder.
-            start_angle_deg (int): from which angle to start slicing; by degree.
+            center (Point3): the center of a cylinder
+            start_angle_deg (int): from which angle to start slicing; by degree
             radius (float): the radius of the cylinder; must be more than zero
             inner_radius (float): the radius of the inner cylinder; must be less than radius or equal
             height (float): length of the cylinder
@@ -146,8 +134,6 @@ class VerticalRoundedEdge(Cylinder):
             segs_top_cap (int): radial subdivisions of the top cap; minimum = 0
             segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0
             ring_slice_deg (int): the angle of the pie slice removed from the cylinder, in degrees; must be from 0 to 360
-            slice_caps_radial (int): subdivisions of both slice caps, along the radius; minimum = 0
-            slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; minimum=0
             invert (bool): whether or not the geometry should be rendered inside-out; default is False
     """
 
@@ -166,7 +152,6 @@ class VerticalRoundedEdge(Cylinder):
             slice_caps_axial=0,
             invert=invert
         )
-
         self.center = center
         self.start_angle_deg = start_angle_deg
         self.start_angle_rad = math.pi * self.start_angle_deg / 180
@@ -238,7 +223,7 @@ class VerticalRoundedEdge(Cylinder):
 
         return vertex_cnt
 
-    def create_mantle_quads(self, index_offset, vdata_values, prim_indices):
+    def create_mantle_quad_vertices(self, index_offset, vdata_values, prim_indices):
         direction = -1 if self.invert else 1
         vertex_cnt = 0
 
@@ -262,25 +247,14 @@ class VerticalRoundedEdge(Cylinder):
                 vdata_values.extend([*vertex, *self.color, *normal, *uv])
                 vertex_cnt += 1
 
-        # the vertex order of the mantle quads
-        n = self.segs_c + 1
-
-        for i in range(1, self.segs_a + 1):
-            for j in range(self.segs_c):
-                vi1 = index_offset + i * n + j
-                vi2 = vi1 - n
-                vi3 = vi2 + 1
-                vi4 = vi1 + 1
-
-                prim_indices.extend((vi1, vi2, vi4) if self.invert else (vi1, vi2, vi3))
-                prim_indices.extend((vi2, vi3, vi4) if self.invert else (vi1, vi3, vi4))
-
         return vertex_cnt
 
 
 class HorizontalRoundedEdge(Cylinder):
     """Creates a cylinder model.
        Args:
+            center (Point3): the center of a cylinder
+            start_angle_deg (int): from which angle to start slicing; by degree
             radius (float): the radius of the cylinder; must be more than zero
             inner_radius (float): the radius of the inner cylinder; must be less than radius or equal
             height (float): length of the cylinder
@@ -289,14 +263,15 @@ class HorizontalRoundedEdge(Cylinder):
             segs_top_cap (int): radial subdivisions of the top cap; minimum = 0
             segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0
             ring_slice_deg (int): the angle of the pie slice removed from the cylinder, in degrees; must be from 0 to 360
-            slice_caps_radial (int): subdivisions of both slice caps, along the radius; minimum = 0
-            slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; minimum=0
+            start_slice_cap (bool): if True, a cap is created on the slice start side; default is True
+            end_slice_cap (bool): if True, a cap is created on the opposite side of the slice start side; default is True
             invert (bool): whether or not the geometry should be rendered inside-out; default is False
+            x_axis (bool): if true, parallel to x-axis; if false, parallel to y-axis
     """
 
     def __init__(self, center, start_angle_deg, radius=1., inner_radius=0., height=1.,
                  segs_c=40, segs_a=2, segs_top_cap=3, segs_bottom_cap=3, ring_slice_deg=0,
-                 slice_caps_radial=3, slice_caps_axial=2, invert=False, x_axis=True):
+                 start_slice_cap=False, end_slice_cap=False, invert=False, x_axis=True):
         super().__init__(
             radius=radius,
             inner_radius=inner_radius,
@@ -305,24 +280,23 @@ class HorizontalRoundedEdge(Cylinder):
             segs_a=segs_a,
             segs_top_cap=segs_top_cap,
             segs_bottom_cap=segs_bottom_cap,
+            slice_caps_radial=2,
+            slice_caps_axial=segs_a,
             ring_slice_deg=ring_slice_deg,
-            slice_caps_radial=slice_caps_radial,
-            slice_caps_axial=slice_caps_axial,
+            start_slice_cap=start_slice_cap,
+            end_slice_cap=end_slice_cap,
             invert=invert
         )
         # If True, tilt a vertical cylinder, whose bottom center is the point (0, 0, 0),
         # 90 degrees in the x-axis direction, and if not, 90 degrees in the y-axis direction.
         self.x_axis = x_axis
-
         self.center = center
         self.start_angle_deg = start_angle_deg
         self.define_variables()
 
     def define_variables(self):
         self.start_angle_rad = math.pi * self.start_angle_deg / 180
-        self.thickness = self.radius - self.inner_radius
-        self.slice_rad = math.pi * self.ring_slice_deg / 180
-        self.delta_rad = math.pi * ((360 - self.ring_slice_deg) / 180) / self.segs_c
+        super().define_variables()
 
     def get_cap_normal(self):
         if self.x_axis:
@@ -356,17 +330,10 @@ class HorizontalRoundedEdge(Cylinder):
             c = math.cos(angle)
             s = math.sin(angle) * direction
 
-            # if self.x_axis:
-            #     vertex = Point3(val, r * c, r * s)
-            # else:
-            #     vertex = Point3(r * s, val, r * c)
-
             if self.x_axis:
                 vertex = Point3(val, r * s, r * c)
             else:
                 vertex = Point3(r * c, val, r * s)
-
-
 
             # Add center to vertex.
             vertex += self.center
@@ -393,7 +360,6 @@ class HorizontalRoundedEdge(Cylinder):
         vertex_cnt = 0
 
         # cap quad vertices
-        
         for i in range(n, segs_cap + 1 - n):
             r = self.inner_radius + self.thickness * (i + n) / segs_cap
 
@@ -402,18 +368,12 @@ class HorizontalRoundedEdge(Cylinder):
                 c = math.cos(angle)
                 s = math.sin(angle) * direction
 
-                # if self.x_axis:
-                #     vertex = Point3(val, r * c, r * s)
-                # else:
-                #     vertex = Point3(r * s, val, r * c)
-
                 if self.x_axis:
                     vertex = Point3(val, r * s, r * c)
                 else:
                     vertex = Point3(r * c, val, r * s)
 
                 # Add center to vertex.
-
                 vertex += self.center
 
                 _r = r / self.radius
@@ -426,7 +386,7 @@ class HorizontalRoundedEdge(Cylinder):
 
         return vertex_cnt
 
-    def create_mantle_quads(self, index_offset, vdata_values, prim_indices):
+    def create_mantle_quad_vertices(self, index_offset, vdata_values, prim_indices):
         direction = -1 if self.invert else 1
         vertex_cnt = 0
 
@@ -452,158 +412,66 @@ class HorizontalRoundedEdge(Cylinder):
                 vdata_values.extend([*vertex, *self.color, *normal, *uv])
                 vertex_cnt += 1
 
-        # the vertex order of the mantle quads
-        n = self.segs_c + 1
-
-        for i in range(1, self.segs_a + 1):
-            for j in range(self.segs_c):
-                vi1 = index_offset + i * n + j
-                vi2 = vi1 - n
-                vi3 = vi2 + 1
-                vi4 = vi1 + 1
-
-                prim_indices.extend((vi1, vi2, vi4) if self.invert else (vi1, vi2, vi3))
-                prim_indices.extend((vi2, vi3, vi4) if self.invert else (vi1, vi3, vi4))
-
         return vertex_cnt
 
-    def create_slice_cap_quads(self, index_offset, vdata_values, prim_indices):
+    def get_slice_cap_angle(self, is_start):
+        match self.start_angle_deg:
+            case 0:
+                deg = 90 if is_start else 180
+            case 90:
+                deg = 0 if is_start else 90
+            case 180:
+                deg = 270 if is_start else 0
+            case 270:
+                deg = 180 if is_start else 270
+
+        delta_rad = math.pi * ((360 - deg) / 180) / self.segs_c
+        return delta_rad
+
+    def create_slice_cap_quad_vertices(self, index_offset, vdata_values, prim_indices, is_start):
         vertex_cnt = 0
         direction = -1 if self.invert else 1
 
-        # delta_rad = math.pi * ((360 - 0) / 180) / self.segs_c
-        # delta_rad = math.pi * ((360 - 90) / 180) / self.segs_c
-        # delta_rad = math.pi * (self.start_angle_deg / 180) / self.segs_c
+        delta_rad = self.get_slice_cap_angle(is_start)
+        angle = delta_rad * self.segs_c
+        c = math.cos(angle)
+        s = -math.sin(angle)
+        normal = Vec3()
 
-        # the vertices of the slice cap quad
-        # for is_start in [True, False]:
-        if self.start_angle_deg in (0,90, 180, 270):
-            for is_start in [True, False]:
-                if is_start:
-                    normal = Vec3(0, direction, 0)
+        if self.x_axis:
+            normal.y = -direction if self.center.y > 0 else direction
+        else:
+            normal.x = -direction if self.center.x > 0 else direction
 
-                    if self.start_angle_deg == 0:
-                        delta_rad = math.pi * ((360 - 90) / 180) / self.segs_c
-                    if self.start_angle_deg == 90:
-                        delta_rad = math.pi * ((360 - 0) / 180) / self.segs_c
-                    if self.start_angle_deg == 180:
-                        delta_rad = math.pi * ((360 - 270) / 180) / self.segs_c  #0
-                    if self.start_angle_deg == 270:
-                        delta_rad = math.pi * ((360 - 180) / 180) / self.segs_c
+        for i in range(self.segs_sc_a + 1):
+            z = self.height * i / self.segs_sc_a
+            v = i / self.segs_sc_a
 
+            for j in range(self.segs_sc_r + 1):
+                r = self.inner_radius + (self.radius - self.inner_radius) * j / self.segs_sc_r
+                vertex = Point3(z, r * s, r * c) if self.x_axis else Point3(r * c, z, r * s)
+                vertex += self.center
 
+                coef = 0.5 if is_start else -0.5
+                u = 0.5 + coef * r / self.radius * direction * -1
+                uv = Vec2(u, v)
 
-                    angle = delta_rad * self.segs_c # + self.start_angle_rad
-                    # angle = self.delta_rad * self.segs_c
-                    c = math.cos(angle)
-                    s = -math.sin(angle)
-                else:
-                    if self.start_angle_deg == 0:
-                        delta_rad = math.pi * ((360 - 180) / 180) / self.segs_c
-                    if self.start_angle_deg == 90:
-                        delta_rad = math.pi * ((360 - 90) / 180) / self.segs_c
-                    if self.start_angle_deg == 180:
-                        delta_rad = math.pi * ((360 - 0) / 180) / self.segs_c  #270
-                    if self.start_angle_deg == 270:
-                        delta_rad = math.pi * ((360 - 270) / 180) / self.segs_c
-
-                    angle = delta_rad * self.segs_c # + self.start_angle_rad
-                    # angle = self.delta_rad * self.segs_c
-                    c = math.cos(angle)
-                    s = -math.sin(angle)
-                    normal = Vec3(s, -c, 0) * direction
-
-                for i in range(self.segs_sc_a + 1):
-                    z = self.height * i / self.segs_sc_a
-                    v = i / self.segs_sc_a
-
-                    for j in range(self.segs_sc_r + 1):
-                        r = self.inner_radius + (self.radius - self.inner_radius) * j / self.segs_sc_r
-
-                        if self.x_axis:
-                            if not is_start:
-                                vertex = Point3(z, r * s, r * c)
-
-                            if is_start:
-                                # vertex = Point3(z, 0, r)
-                                vertex = Point3(z, r * s, r * c)
-                        else:
-                            if not is_start:
-                                vertex = Point3(r * c, z, r * s)
-                            
-                            if is_start:
-                                # vertex = Point3(r, z, 0)
-                                vertex = Point3(r * c, z, r * s)
-
-                        vertex += self.center
-
-                        # Add center.
-                        # print(vertex)
-                        coef = 0.5 if is_start else -0.5
-                        u = 0.5 + coef * r / self.radius * direction * -1
-                        uv = Vec2(u, v)
-
-                        vdata_values.extend([*vertex, *self.color, *normal, *uv])
-                        vertex_cnt += 1
-
-                # the vertex order of the slice cap quads
-                for i in range(self.segs_sc_a):
-                    for j in range(self.segs_sc_r):
-                        vi1 = index_offset + j
-                        vi2 = vi1 + self.segs_sc_r + 1
-                        vi3 = vi1 + 1
-                        vi4 = vi2 + 1
-
-                        if is_start:
-                            prim_indices.extend((vi1, vi3, vi2) if self.invert else (vi1, vi2, vi3))
-                            prim_indices.extend((vi2, vi3, vi4) if self.invert else (vi2, vi4, vi3))
-                        else:
-                            prim_indices.extend((vi1, vi2, vi3) if self.invert else (vi1, vi3, vi2))
-                            prim_indices.extend((vi2, vi4, vi3) if self.invert else (vi2, vi3, vi4))
-
-                    index_offset += self.segs_sc_r + 1
-                index_offset += self.segs_sc_r + 1
+                vdata_values.extend([*vertex, *self.color, *normal, *uv])
+                vertex_cnt += 1
 
         return vertex_cnt
-
-
-def rotate(rotation, point):
-    rotation_x = math.radians(rotation[0])
-    rotation_y = math.radians(rotation[1])
-    rotation_z = math.radians(rotation[2])
-
-    rot_x = np.array([
-        [1, 0, 0],
-        [0, math.cos(rotation_x), -math.sin(rotation_x)],
-        [0, math.sin(rotation_x), math.cos(rotation_x)]
-    ])
-    rot_y = np.array([
-        [math.cos(rotation_y), 0, math.sin(rotation_y)],
-        [0, 1, 0],
-        [-math.sin(rotation_y), 0, math.cos(rotation_y)]
-    ])
-    rot_z = np.array([
-        [math.cos(rotation_z), -math.sin(rotation_z), 0],
-        [math.sin(rotation_z), math.cos(rotation_z), 0],
-        [0, 0, 1]
-    ])
-
-    rot = rot_z.dot(rot_y.dot(rot_x))
-    rot_pt = rot.dot(point.T).T
-    return rot_pt
-    # print(rot_pt, rot)
 
 
 class QuarteredHemisphereCorner(CapsuleHemisphere):
 
     """Create a sphere model.
        Args:
-            radius (float): the radius of sphere; more than 0;
+            center (Point3): the center of a sphere
+            start_angle_deg (int): from which angle to start slicing; by degree
+            radius (float): the radius of sphere; more than 0
             inner_radius (float): the radius of the inner sphere; cannot be negative; must be in [0., radius]
             segs_h(int): subdivisions along horizontal circles; minimum = 3
             segs_v (int): subdivisions along vertical semicircles; minimum = 2
-            segs_bottom_cap (int): radial subdivisions of the bottom clipping cap; minimum = 0 (no cap)
-            segs_top_cap (int): radial subdivisions of the top clipping cap; minimum = 0 (no cap)
             segs_slice_caps (int): radial subdivisions of the slice caps; minimum = 0 (no caps)
             slice_deg (float): the angle of the pie slice removed from the sphere, in degrees; must be in [0., 360.]
             bottom_clip (float):
@@ -701,8 +569,9 @@ class QuarteredHemisphereCorner(CapsuleHemisphere):
         vertex_cnt = 0
 
         # Define the mantle quad vertices.
+        # in Sphere, `for i in range(1, self.segs_v - 1):`
         for i in range(1, self.segs_v):
-            angle_v = self.bottom_angle + self.delta_angle_v * (i + 1)  #  + self.start_angle_rad  # ********
+            angle_v = self.bottom_angle + self.delta_angle_v * (i + 1)
             z = self.radius * -math.cos(angle_v)
             radius_h = self.radius * math.sin(angle_v)
             v = angle_v / math.pi

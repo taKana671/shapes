@@ -19,11 +19,14 @@ class Cylinder(ProceduralGeometry):
             ring_slice_deg (int): the angle of the pie slice removed from the cylinder, in degrees; must be from 0 to 360
             slice_caps_radial (int): subdivisions of both slice caps, along the radius; minimum = 0
             slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; minimum=0
+            start_slice_cap (bool): if True, a cap is created on the slice start side; default is True
+            end_slice_cap (bool): if True, a cap is created on the opposite side of the slice start side; default is True
             invert (bool): whether or not the geometry should be rendered inside-out; default is False
     """
 
     def __init__(self, radius=1., inner_radius=0., height=1., segs_c=40, segs_a=2, segs_top_cap=3,
-                 segs_bottom_cap=3, ring_slice_deg=0, slice_caps_radial=3, slice_caps_axial=2, invert=False):
+                 segs_bottom_cap=3, ring_slice_deg=0, slice_caps_radial=3, slice_caps_axial=2,
+                 start_slice_cap=True, end_slice_cap=True, invert=False):
         super().__init__()
         self.radius = radius
         self.inner_radius = inner_radius
@@ -37,6 +40,9 @@ class Cylinder(ProceduralGeometry):
         self.ring_slice_deg = ring_slice_deg
         self.segs_sc_r = slice_caps_radial
         self.segs_sc_a = slice_caps_axial
+        self.start_slice_cap = start_slice_cap
+        self.end_slice_cap = end_slice_cap
+
         self.invert = invert
 
     def create_cap_triangles(self, vdata_values, bottom=True):
@@ -136,7 +142,7 @@ class Cylinder(ProceduralGeometry):
 
         return vertex_cnt
 
-    def create_mantle_quads(self, index_offset, vdata_values, prim_indices):
+    def create_mantle_quad_vertices(self, index_offset, vdata_values, prim_indices):
         direction = -1 if self.invert else 1
         vertex_cnt = 0
 
@@ -157,6 +163,12 @@ class Cylinder(ProceduralGeometry):
 
                 vdata_values.extend([*vertex, *self.color, *normal, *uv])
                 vertex_cnt += 1
+
+        return vertex_cnt
+
+    def create_mantle_quads(self, index_offset, vdata_values, prim_indices):
+        # mantle quad vertices
+        vertex_cnt = self.create_mantle_quad_vertices(index_offset, vdata_values, prim_indices)
 
         # the vertex order of the mantle quads
         n = self.segs_c + 1
@@ -205,33 +217,42 @@ class Cylinder(ProceduralGeometry):
 
         return vertex_cnt
 
-    def create_slice_cap_quads(self, index_offset, vdata_values, prim_indices):
+    def create_slice_cap_quad_vertices(self, index_offset, vdata_values, prim_indices, is_start):
         vertex_cnt = 0
         direction = -1 if self.invert else 1
 
-        # the vertices of the slice cap quad
-        for is_start in [True, False]:
-            if is_start:
-                normal = Vec3(0, direction, 0)
-            else:
-                angle = self.delta_rad * self.segs_c
-                c = math.cos(angle)
-                s = -math.sin(angle)
-                normal = Vec3(s, -c, 0) * direction
+        if is_start:
+            normal = Vec3(0, direction, 0)
+        else:
+            angle = self.delta_rad * self.segs_c
+            c = math.cos(angle)
+            s = -math.sin(angle)
+            normal = Vec3(s, -c, 0) * direction
 
-            for i in range(self.segs_sc_a + 1):
-                z = self.height * i / self.segs_sc_a
-                v = i / self.segs_sc_a
+        for i in range(self.segs_sc_a + 1):
+            z = self.height * i / self.segs_sc_a
+            v = i / self.segs_sc_a
 
-                for j in range(self.segs_sc_r + 1):
-                    r = self.inner_radius + (self.radius - self.inner_radius) * j / self.segs_sc_r
-                    vertex = Point3(r, 0, z) if is_start else Point3(r * c, r * s, z)
-                    coef = 0.5 if is_start else -0.5
-                    u = 0.5 + coef * r / self.radius * direction * -1
-                    uv = Vec2(u, v)
+            for j in range(self.segs_sc_r + 1):
+                r = self.inner_radius + (self.radius - self.inner_radius) * j / self.segs_sc_r
+                vertex = Point3(r, 0, z) if is_start else Point3(r * c, r * s, z)
+                coef = 0.5 if is_start else -0.5
+                u = 0.5 + coef * r / self.radius * direction * -1
+                uv = Vec2(u, v)
 
-                    vdata_values.extend([*vertex, *self.color, *normal, *uv])
-                    vertex_cnt += 1
+                vdata_values.extend([*vertex, *self.color, *normal, *uv])
+                vertex_cnt += 1
+
+        return vertex_cnt
+
+    def create_slice_cap_quads(self, index_offset, vdata_values, prim_indices):
+        vertex_cnt = 0
+
+        for is_start in self.slice_caps:
+            # the vertices of the slice cap quad
+            vertex_cnt += self.create_slice_cap_quad_vertices(
+                index_offset, vdata_values, prim_indices, is_start
+            )
 
             # the vertex order of the slice cap quads
             for i in range(self.segs_sc_a):
@@ -272,6 +293,13 @@ class Cylinder(ProceduralGeometry):
         self.thickness = self.radius - self.inner_radius
         self.slice_rad = math.pi * self.ring_slice_deg / 180
         self.delta_rad = math.pi * ((360 - self.ring_slice_deg) / 180) / self.segs_c
+        self.slice_caps = []
+
+        if self.start_slice_cap:
+            self.slice_caps.append(True)
+
+        if self.end_slice_cap:
+            self.slice_caps.append(False)
 
     def get_geom_node(self):
         self.define_variables()
