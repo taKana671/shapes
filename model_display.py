@@ -25,11 +25,10 @@ from src import RightTriangularPrism
 from src import Plane
 from src import EllipticalPrism
 from src import Capsule
-from src import CapsulePrism, RoundedCornerBox
-from src.validation import validate
-
-
+from src import CapsulePrism
+from src import RoundedCornerBox
 from src import RoundedEdgeBox
+from src.validation import validate
 
 
 # Without 'framebuffer-multisample' and 'multisamples' settings,
@@ -53,7 +52,8 @@ SHAPES = {
     'capsule': Capsule,
     'capsule_prism': CapsulePrism,
     'elliptical_prism': EllipticalPrism,
-    'rounded_corner_box': RoundedCornerBox
+    'rounded_corner_box': RoundedCornerBox,
+    'rounded_edge_box': RoundedEdgeBox,
 }
 
 
@@ -115,8 +115,8 @@ class ModelDisplay(ShowBase):
         self.gui.create_model_selector(self.slct_aspect2d)
 
         # Define variables.
-        # self.is_rotating = True
-        self.is_rotating = False
+        self.is_rotating = True
+        # self.is_rotating = False
         self.show_wireframe = True
         self.dragging = False
         self.before_mouse_pos = None
@@ -143,13 +143,7 @@ class ModelDisplay(ShowBase):
             hpr = self.model.get_hpr()
             self.model.remove_node()
 
-        # self.model = model
-        
-        self.model = RoundedEdgeBox().create()
-        # self.model = Cylinder(radius=0).create()
-        # self.model = CapsuleHemisphere(
-        #     Point3(0, 0, 0), slice_deg=180, inner_radius=0.8, bottom_clip=0, top_clip=1, segs_slice_caps=0).create()
-
+        self.model = model
         self.model.set_pos_hpr_scale(Point3(0, 0, 0), hpr, scale)
         self.model.set_color(LColor(1, 0, 0, 1))
         self.model.reparent_to(self.render)
@@ -620,7 +614,8 @@ EX_COMMON = ('bottom_center', 'top_center', 'center', 'fmt', 'color', 'stride')
 EX_INDIVI = {
     'CapsulePrism': ['open_left', 'open_right', 'open_front', 'open_back'],
     'RoundedCornerBox': ['open_left', 'open_right', 'open_front', 'open_back'],
-    'Capsule': ['start_slice_cap', 'end_slice_cap'],
+    'Capsule': ['start_slice_cap', 'end_slice_cap', 'segs_tc', 'segs_bc'],
+    'RoundedEdgeBox': ['open_left', 'open_right', 'open_front', 'open_back'],
 }
 
 

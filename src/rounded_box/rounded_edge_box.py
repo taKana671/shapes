@@ -25,11 +25,13 @@ class RoundedEdgeBox(RoundedBox):
             segs_z (int): the number of subdivisions in height; more than 1.
             thickness (float): offset of inner box sides; 0 means no inner box; must be less than corner_radius.
             corner_radius (float): radius of the corner cylinders.
+            open_top(bool): if True, no top side.
+            open_bottom(bool): if True, no bottom side.
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 
-    def __init__(self, width=4., depth=4., height=4., segs_w=4, segs_d=1, segs_z=2,
-                 thickness=0., corner_radius=0.5, invert=False):
+    def __init__(self, width=2., depth=2., height=2., segs_w=4, segs_d=4, segs_z=4,
+                 thickness=0., corner_radius=0.5, open_top=False, open_bottom=False, invert=False):
         super().__init__(
             width=width,
             depth=depth,
@@ -38,9 +40,9 @@ class RoundedEdgeBox(RoundedBox):
             segs_d=segs_d,
             segs_z=segs_z,
             thickness=thickness,
-            invert=invert,
-            open_top=True if thickness > 0 else False,
-            open_bottom=True if thickness > 0 else False
+            open_top=open_top,
+            open_bottom=open_bottom,
+            invert=invert
         )
         self.c_radius = corner_radius
 
@@ -100,6 +102,7 @@ class RoundedEdgeBox(RoundedBox):
         return vertex_cnt
 
     def create_horizontal_rounded_edge(self, vertex_cnt, vdata_values, prim_indices, side):
+        is_open = self.open_top if Sides.TOP in side else self.open_bottom
         z = self._height * 0.5 * (-1 if Sides.BOTTOM in side else 1)
         center = Point3(0, 0, z)
         x, y = self._width * 0.5, self._depth * 0.5
@@ -157,7 +160,7 @@ class RoundedEdgeBox(RoundedBox):
 
         vertex_cnt = self.create_horizontal_edge_cylinder(
             vertex_cnt, vdata_values, prim_indices, height, center,
-            start_angle, 270, x_axis, start_slice_cap, end_slice_cap
+            start_angle, 270, x_axis, start_slice_cap, end_slice_cap, is_open
         )
 
         return vertex_cnt
@@ -338,12 +341,11 @@ class RoundedEdgeBox(RoundedBox):
                 segs_d=self.segs_d,
                 segs_z=self.segs_z,
                 thickness=0,
-                invert=not self.invert,
                 corner_radius=self.c_inner_radius,
+                open_top=self.open_top,
+                open_bottom=self.open_bottom,
+                invert=not self.invert,
             )
-
-            maker.open_top = True
-            maker.open_bottom = True
 
             geom_node = maker.get_geom_node()
             self.add(geom_node, vdata_values, vertex_cnt, prim_indices)

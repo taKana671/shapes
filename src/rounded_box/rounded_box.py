@@ -74,7 +74,7 @@ class RoundedBox(Box):
 
     def create_horizontal_edge_cylinder(self, vertex_cnt, vdata_values, prim_indices,
                                         height, center, start_angle, slice_deg, x_axis,
-                                        start_slice_cap, end_slice_cap):
+                                        start_slice_cap, end_slice_cap, is_open):
         edge = HorizontalRoundedEdge(
             center=center + self.center,
             start_angle_deg=start_angle,
@@ -94,7 +94,7 @@ class RoundedBox(Box):
 
         vertex_cnt = edge.create_cylinder(vertex_cnt, vdata_values, prim_indices)
 
-        if self.thickness:
+        if self.thickness and is_open:
             vertex_cnt += edge.create_slice_cap_quads(vertex_cnt, vdata_values, prim_indices)
 
         return vertex_cnt
