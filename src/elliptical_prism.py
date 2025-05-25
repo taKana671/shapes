@@ -306,5 +306,5 @@ class EllipticalPrism(ProceduralGeometry):
 
         # Create the geom node.
         geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'cylinder')
+            vertex_cnt, vdata_values, prim_indices, 'elliptical_prism')
         return geom_node

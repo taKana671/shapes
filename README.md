@@ -8,7 +8,8 @@ A model editor `model_display.py` allows you to create a 3D model while seeing h
 And this repositroy is also a submodule for [DeliveryCart](https://github.com/taKana671/DeliveryCart) and [VoronoiCity](https://github.com/taKana671/VoronoiCity).
 
 ![Image](https://github.com/user-attachments/assets/b4db70b2-81be-4556-b81d-2f1c36a9ffde)
-![Image](https://github.com/user-attachments/assets/68fe25b1-160a-4e0c-ba40-936df18b9279)
+![Image](https://github.com/user-attachments/assets/40ca644a-a478-467d-9f72-1ca3e32b4fc2)
+
 
 # Requirements
 * Panda3D 1.10.15
@@ -25,7 +26,7 @@ And this repositroy is also a submodule for [DeliveryCart](https://github.com/ta
 >>> python model_display.py
 ```
 
-![Image](https://github.com/user-attachments/assets/a2efcf3e-f91f-4729-af99-740f151acd1c)
+![Image](https://github.com/user-attachments/assets/f0ca5f64-3fab-4d1e-8802-c4eb55fae32e)
 
 * 3D shape icon buttons change 3D shape models.
 * Change the parameters in the left input boxes and click the [Reflect Changes] button to reflect the changes in the 3D model.
