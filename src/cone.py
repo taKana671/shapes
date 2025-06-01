@@ -29,9 +29,7 @@ class Cone(ProceduralGeometry):
                  bottom_radius=1., top_radius=0., bottom_inner_radius=0., top_inner_radius=0.,
                  slice_caps_radial=2, slice_caps_axial=2, invert=False):
         super().__init__()
-        self.bottom_center = Point3(0, 0, 0)    # the position of the bottom center in object space
-        self.top_center = Point3(0, 0, height)  # the position of the top center in object space
-
+        self.height = height
         self.segs_c = segs_c
         self.segs_a = segs_a
         self.segs_bc = segs_bottom_cap
@@ -288,13 +286,15 @@ class Cone(ProceduralGeometry):
 
         return vertex_cnt
 
-    def get_geom_node(self):
+    def define_variables(self):
         self.bottom_thickness = self.bottom_radius - self.bottom_inner_radius
         self.top_thickness = self.top_radius - self.top_inner_radius
         self.delta_radius = self.top_radius - self.bottom_radius
-        self.height = (self.top_center - self.bottom_center).length()
         self.slice_rad = math.pi * self.slice_deg / 180
         self.delta_rad = math.pi * ((360. - self.slice_deg) / 180.) / self.segs_c
+
+    def get_geom_node(self):
+        self.define_variables()
 
         vdata_values = array.array('f', [])
         prim_indices = array.array('H', [])
