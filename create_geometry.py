@@ -48,9 +48,15 @@ class ProceduralGeometry:
         vdata_mem[:] = vdata_values
 
         prim = GeomTriangles(Geom.UHStatic)
+
+        # force the index type of the primitive to NT_uint32 if indices higher
+        # than 65535 are needed (the default is NT_uint16)
+        if (type_code := prim_indices.typecode) == 'I':
+            prim.set_index_type(Geom.NT_uint32)
+
         prim_array = prim.modify_vertices()
         prim_array.unclean_set_num_rows(len(prim_indices))
-        prim_mem = memoryview(prim_array).cast('B').cast('H')
+        prim_mem = memoryview(prim_array).cast('B').cast(type_code)
         prim_mem[:] = prim_indices
         geom_node = GeomNode('geomnode')
         geom = Geom(vdata)
