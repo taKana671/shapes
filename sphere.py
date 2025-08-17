@@ -52,8 +52,8 @@ class Sphere(ProceduralGeometry):
         radius_h = math.sqrt(self.radius ** 2 - cap.z ** 2)
         direction = -1 if self.invert else 1
         normal = cap.normal * -1 if self.invert else cap.normal
-        vertex = Point3(0., 0., cap.z)
 
+        vertex = Point3(0., 0., cap.z)
         uv = Vec2(.5, .5)
         vdata_values.extend([*vertex, *self.color, *normal, *uv])
 
@@ -86,7 +86,7 @@ class Sphere(ProceduralGeometry):
         normal = cap.normal * -1 if self.invert else cap.normal
         _delta = 0 if self.invert else self.slice_rad
 
-        # Define the cap quad vertices.
+        # Define cap quad vertices.
         for i in range(1, cap.segs):
             r = radius_h * (i + 1) / cap.segs
 
@@ -229,18 +229,10 @@ class Sphere(ProceduralGeometry):
 
         return vertex_cnt
 
-    def create_bottom(self, index_offset, vdata_values, prim_indices):
-        """Create bottom.
+    def define_bottom_cap(self, index_offset, vdata_values, prim_indices, cap):
+        """Define bottom cap.
         """
         vertex_cnt = 0
-
-        cap = SimpleNamespace(
-            z=self.bottom_height,
-            segs=self.segs_bc,
-            normal=Vec3(0., 0., -1.),
-            pole_vertex=Point3(0, 0, -self.radius),
-            is_bottom=True
-        )
 
         if self.bottom_clip > -1:
             if self.segs_bc:
@@ -254,6 +246,21 @@ class Sphere(ProceduralGeometry):
             vertex_cnt += temp_cnt + self.create_bottom_pole_triangles(index_offset, vdata_values, prim_indices)
 
         return vertex_cnt, index_offset + temp_cnt
+
+    def create_bottom(self, index_offset, vdata_values, prim_indices):
+        """Create bottom.
+        """
+        cap = SimpleNamespace(
+            z=self.bottom_height,
+            segs=self.segs_bc,
+            normal=Vec3(0., 0., -1.),
+            pole_vertex=Point3(0, 0, -self.radius),
+            is_bottom=True
+        )
+
+        vertex_cnt, index_offset = self.define_bottom_cap(
+            index_offset, vdata_values, prim_indices, cap)
+        return vertex_cnt, index_offset
 
     def create_top_edge_quads(self, index_offset, prim_indices):
         """Define the vertex order of the polygons along a top cap.
@@ -294,7 +301,7 @@ class Sphere(ProceduralGeometry):
     def create_top_cap_quads(self, index_offset, vdata_values, prim_indices, cap):
         """Define the quad vertices and their orders of a top cap.
         """
-        # Define the cap quad vertices.
+        # Define cap quad vertices.
         vertex_cnt = self.get_cap_quad_vertices(vdata_values, cap)
 
         # Define the vertex order.
@@ -310,17 +317,9 @@ class Sphere(ProceduralGeometry):
 
         return vertex_cnt
 
-    def create_top(self, index_offset, vdata_values, prim_indices):
-        """Create top.
+    def define_top_cap(self, index_offset, vdata_values, prim_indices, cap):
+        """Define a top cap.
         """
-        cap = SimpleNamespace(
-            z=self.top_height,
-            segs=self.segs_tc,
-            normal=Vec3(0., 0., 1.),
-            pole_vertex=Point3(0, 0, self.radius),
-            is_bottom=False
-        )
-
         vertex_cnt = 0
 
         if self.top_clip < 1.:
@@ -334,6 +333,20 @@ class Sphere(ProceduralGeometry):
             vertex_cnt += self.create_cap_pole(vdata_values, cap)
             self.create_top_pole_triangles(index_offset + vertex_cnt - 1, prim_indices)
 
+        return vertex_cnt
+
+    def create_top(self, index_offset, vdata_values, prim_indices):
+        """Create top.
+        """
+        cap = SimpleNamespace(
+            z=self.top_height,
+            segs=self.segs_tc,
+            normal=Vec3(0., 0., 1.),
+            pole_vertex=Point3(0, 0, self.radius),
+            is_bottom=False
+        )
+
+        vertex_cnt = self.define_top_cap(index_offset, vdata_values, prim_indices, cap)
         return vertex_cnt
 
     def create_mantle_quads(self, index_offset, vdata_values, prim_indices):
@@ -376,7 +389,10 @@ class Sphere(ProceduralGeometry):
 
         return vertex_cnt
 
-    def get_hollow_cap_inner_vertices(self, seg_vecs, inner_verts, c_h=None, s_h=None):
+    def get_thickness_cap_vertices(self, seg_vecs, inner_verts, c_h=None, s_h=None):
+        """Get the vertices of the sliced surface of a sphere with a double structure
+           consisting of an inner and outer spheres.
+        """
         inner_bottom_height = self.bottom_height + self.thickness
         inner_bottom_angle = math.pi - math.acos(np.clip(inner_bottom_height / self.inner_radius, -1.0, 1.0))
 
@@ -412,7 +428,9 @@ class Sphere(ProceduralGeometry):
             inner_verts.append(Point3(0, 0, inner_top_height))
             seg_vecs.append(Vec3(0, 0, self.thickness / self.segs_sc))
 
-    def get_closed_cap_inner_vertices(self, seg_vecs, inner_verts, c_h=None, s_h=None):
+    def get_cap_vertices(self, seg_vecs, inner_verts, c_h=None, s_h=None):
+        """Get the vertices of the sliced surface of a sphere.
+        """
         z = (self.top_height + self.bottom_height) * .5
         h = (self.top_height - self.bottom_height) * .5
         vertex = Point3(0., 0., z)
@@ -460,7 +478,7 @@ class Sphere(ProceduralGeometry):
                 normal = Vec3(s_h, -c_h, 0.) * direction
 
             if self.inner_radius:
-                self.get_hollow_cap_inner_vertices(seg_vecs, inner_verts, c_h, s_h)
+                self.get_thickness_cap_vertices(seg_vecs, inner_verts, c_h, s_h)
 
                 # Define the lower inner central vertex of the slice cap.
                 if self.bottom_clip > -1.:
@@ -495,7 +513,7 @@ class Sphere(ProceduralGeometry):
 
                 index_offset += vertex_cnt
             else:
-                self.get_closed_cap_inner_vertices(seg_vecs, inner_verts, c_h, s_h)
+                self.get_cap_vertices(seg_vecs, inner_verts, c_h, s_h)
 
                 vertex = inner_verts[0]
                 v = .5 + .5 * vertex.z / self.radius
@@ -615,9 +633,19 @@ class Sphere(ProceduralGeometry):
             bottom_clip = (self.bottom_height + self.thickness) / self.inner_radius
             top_clip = (self.top_height - self.thickness) / self.inner_radius
 
-            sphere_maker = Sphere(self.inner_radius, 0, self.segs_h, self.segs_v,
-                                  self.segs_bc, self.segs_tc, 0,
-                                  self.slice_deg, bottom_clip, top_clip, not self.invert)
+            sphere_maker = Sphere(
+                radius=self.inner_radius,
+                inner_radius=0,
+                segs_h=self.segs_h,
+                segs_v=self.segs_v,
+                segs_bottom_cap=self.segs_bc,
+                segs_top_cap=self.segs_tc,
+                segs_slice_caps=0,
+                slice_deg=self.slice_deg,
+                bottom_clip=bottom_clip,
+                top_clip=top_clip,
+                invert=not self.invert
+            )
 
             geom_node = sphere_maker.get_geom_node()
             self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
