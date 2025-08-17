@@ -222,7 +222,7 @@ class CapsuleHemisphere(Sphere):
             offset_cnt = self.create_cap_edge_vertices(vdata_values, prim_indices, cap)
             vertex_cnt += self.create_bottom_edge_quads(index_offset, vdata_values, prim_indices)
         else:
-            offset_cnt = self.create_cap_pole(vdata_values, prim_indices, cap)
+            offset_cnt = self.create_cap_pole(vdata_values, cap)
             vertex_cnt += self.create_bottom_pole_triangles(index_offset, vdata_values, prim_indices)
 
         return vertex_cnt + offset_cnt, index_offset + offset_cnt
@@ -240,7 +240,7 @@ class CapsuleHemisphere(Sphere):
             vertex_cnt += self.create_cap_edge_vertices(vdata_values, prim_indices, cap)
             self.create_top_edge_quads(index_offset + vertex_cnt - 1, prim_indices)
         else:
-            vertex_cnt += self.create_cap_pole(vdata_values, prim_indices, cap)
+            vertex_cnt += self.create_cap_pole(vdata_values, cap)
             self.create_top_pole_triangles(index_offset + vertex_cnt - 1, prim_indices)
 
         return vertex_cnt

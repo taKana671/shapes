@@ -337,7 +337,7 @@ class Sphere(ProceduralGeometry):
         return vertex_cnt
 
     def create_mantle_quads(self, index_offset, vdata_values, prim_indices):
-        """Define the mantle.
+        """Create mantle.
         """
         n = self.segs_h + 1
         direction = -1 if self.invert else 1
@@ -438,6 +438,8 @@ class Sphere(ProceduralGeometry):
             seg_vecs.append(Vec3(0., 0., h / self.segs_sc))
 
     def create_slice_cap(self, index_offset, vdata_values, prim_indices):
+        """Create slice caps.
+        """
         direction = -1 if self.invert else 1
         total_vertex_cnt = 0
         _offset = index_offset
