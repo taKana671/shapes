@@ -7,9 +7,6 @@ from panda3d.core import Vec3, Point3, Vec2
 
 from .sphere import Sphere
 
-# create_cap_edge_vertices
-# create_cap_pole
-
 
 class Ellipsoid(Sphere):
     """Creates a ellipsoid model.
@@ -17,18 +14,24 @@ class Ellipsoid(Sphere):
             major_axis (float): the longest diameter; must be more than zero
             minor_axis (float): the shortest diameter; must be more than zero
             thickness (floar): the radial offset of major and minor axes; must be 0 < thickness < minor_axis
-            height (float): length of the cylinder
-            segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3
-            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1
+            segs_h(int): subdivisions along horizontal circles; minimum = 3
+            segs_v (int): subdivisions along vertical semicircles; minimum = 2
             segs_top_cap (int): radial subdivisions of the top cap; minimum = 0
             segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0
-            ring_slice_deg (int): the angle of the pie slice removed from the ellipse, in degrees; must be from 0 to 360
-            slice_caps_radial (int): subdivisions of both slice caps, along the radius; minimum = 0
-            slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; minimum=0
+            segs_slice_caps (int): radial subdivisions of the slice caps; minimum = 0 (no caps)
+            slice_deg (float): the angle of the pie slice removed from the ellipsoid, in degrees; must be in [0., 360.]
+            bottom_clip (float):
+                relative height of the plane that cuts off a bottom part of the ellipsoid;
+                must be in [-1., 1.] range;
+                -1. (no clipping)
+            top_clip (float):
+                relative height of the plane that cuts off a top part of the ellipsoid;
+                must be in [bottom_clip, 1.] range;
+                1. (no clipping);
             invert (bool): whether or not the geometry should be rendered inside-out; default is False
     """
 
-    def __init__(self, major_axis=3, minor_axis=6, thickness=0., segs_h=40, segs_v=40,
+    def __init__(self, major_axis=3, minor_axis=6, thickness=0.5, segs_h=40, segs_v=40,
                  segs_top_cap=3, segs_bottom_cap=3, segs_slice_caps=2, slice_deg=180,
                  bottom_clip=-1., top_clip=1., invert=False):
         super().__init__()
@@ -289,7 +292,7 @@ class Ellipsoid(Sphere):
                 self.get_cap_vertices(seg_vecs, inner_verts, c_h, s_h)
 
                 vertex = inner_verts[0]
-                v = .5 + .5 * vertex.z / self.minor_axis
+                v = .5 + .5 * vertex.z / self.semi_minor_axis
                 uv = Vec2(.5, v)
                 vdata_values.extend([*vertex, *self.color, *normal, *uv])
                 vertex_cnt += 1
@@ -370,8 +373,8 @@ class Ellipsoid(Sphere):
         return total_vertex_cnt
 
     def get_thickness_cap_vertices(self, seg_vecs, inner_verts, c_h=None, s_h=None):
-        """Get the vertices of the sliced surface of a sphere with a double structure
-           consisting of an inner and outer spheres.
+        """Get the vertices of the sliced surface of a ellipsoid with a double structure
+           consisting of an inner and outer ellipsoids.
         """
         inner_bottom_height = self.bottom_height + self.thickness
         inner_bottom_angle = math.pi - math.acos(np.clip(inner_bottom_height / self.semi_inner_minor, -1.0, 1.0))
@@ -410,7 +413,7 @@ class Ellipsoid(Sphere):
             seg_vecs.append(Vec3(0, 0, self.thickness / self.segs_sc))
 
     def get_cap_vertices(self, seg_vecs, inner_verts, c_h=None, s_h=None):
-        """Get the vertices of the sliced surface of a sphere.
+        """Get the vertices of the sliced surface of a ellipsoid.
         """
         z = (self.top_height + self.bottom_height) * .5
         h = (self.top_height - self.bottom_height) * .5
@@ -514,5 +517,5 @@ class Ellipsoid(Sphere):
 
         # Create a geom node.
         geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'sphere')
+            vertex_cnt, vdata_values, prim_indices, 'ellipsoid')
         return geom_node
