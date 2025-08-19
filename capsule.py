@@ -190,7 +190,7 @@ class CapsuleHemisphere(Sphere):
 
         return self.segs_h + 1
 
-    def create_cap_edge_vertices(self, vdata_values, prim_indices, cap):
+    def create_cap_edge_vertices(self, vdata_values, cap):
         radius_h = math.sqrt(self.radius ** 2 - cap.z ** 2)
         direction = -1 if self.invert else 1
         _delta = 0 if self.invert else self.slice_rad
@@ -219,7 +219,7 @@ class CapsuleHemisphere(Sphere):
         vertex_cnt = 0
 
         if self.bottom_clip > -1:
-            offset_cnt = self.create_cap_edge_vertices(vdata_values, prim_indices, cap)
+            offset_cnt = self.create_cap_edge_vertices(vdata_values, cap)
             vertex_cnt += self.create_bottom_edge_quads(index_offset, vdata_values, prim_indices)
         else:
             offset_cnt = self.create_cap_pole(vdata_values, cap)
@@ -237,7 +237,7 @@ class CapsuleHemisphere(Sphere):
         vertex_cnt = 0
 
         if self.top_clip < 1.:
-            vertex_cnt += self.create_cap_edge_vertices(vdata_values, prim_indices, cap)
+            vertex_cnt += self.create_cap_edge_vertices(vdata_values, cap)
             self.create_top_edge_quads(index_offset + vertex_cnt - 1, prim_indices)
         else:
             vertex_cnt += self.create_cap_pole(vdata_values, cap)

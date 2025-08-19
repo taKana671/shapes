@@ -536,7 +536,7 @@ class QuarteredHemisphereCorner(CapsuleHemisphere):
 
         return self.segs_h + 1
 
-    def create_cap_edge_vertices(self, vdata_values, prim_indices, cap):
+    def create_cap_edge_vertices(self, vdata_values, cap):
         radius_h = math.sqrt(self.radius ** 2 - cap.z ** 2)
         direction = -1 if self.invert else 1
         _delta = 0 if self.invert else self.slice_rad
