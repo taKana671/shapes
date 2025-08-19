@@ -11,6 +11,7 @@ And this repositroy is also a submodule for
 
 ![Image](https://github.com/user-attachments/assets/b4db70b2-81be-4556-b81d-2f1c36a9ffde)
 ![Image](https://github.com/user-attachments/assets/40ca644a-a478-467d-9f72-1ca3e32b4fc2)
+![Image](https://github.com/user-attachments/assets/2da62053-40d0-4938-bec3-13b6ba5424bc)
 
 # Requirements
 * Panda3D 1.10.15

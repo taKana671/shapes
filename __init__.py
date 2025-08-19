@@ -10,3 +10,4 @@ from .capsule import Capsule
 from .rounded_box.capsule_prism import CapsulePrism
 from .rounded_box.rounded_corner_box import RoundedCornerBox
 from .rounded_box.rounded_edge_box import RoundedEdgeBox
+from .ellipsoid import Ellipsoid

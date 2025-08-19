@@ -7,12 +7,12 @@ from .create_geometry import ProceduralGeometry
 
 
 class EllipticalPrism(ProceduralGeometry):
-    """Creates a cylinder model.
+    """Creates a elliptical prism model.
        Args:
             major_axis (float): the longest diameter; must be more than zero
             minor_axis (float): the shortest diameter; must be more than zero
             thickness (floar): the radial offset of major and minor axes; must be 0 < thickness < minor_axis
-            height (float): length of the cylinder
+            height (float): height of the elliptical prism
             segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3
             segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1
             segs_top_cap (int): radial subdivisions of the top cap; minimum = 0
@@ -42,6 +42,8 @@ class EllipticalPrism(ProceduralGeometry):
         self.invert = invert
 
     def create_cap_triangles(self, vdata_values, bottom=True):
+        """Helper method to define the triangle vertices of a bottom or top cap.
+        """
         normal = Vec3(0, 0, 1) if self.invert else Vec3(0, 0, -1)
         segs_cap = self.segs_bc if bottom else self.segs_tc
 
@@ -50,9 +52,8 @@ class EllipticalPrism(ProceduralGeometry):
 
         height = 0 if bottom else self.height
         direction = -1 if self.invert else 1
-
-        rj = self.major_axis / segs_cap
-        rn = self.minor_axis / segs_cap
+        rj = self.semi_major_axis / segs_cap
+        rn = self.semi_minor_axis / segs_cap
         vertex_cnt = 0
 
         # cap center and triangle vertices
@@ -79,6 +80,8 @@ class EllipticalPrism(ProceduralGeometry):
         return vertex_cnt
 
     def create_cap_quad_vertices(self, vdata_values, bottom=True):
+        """Helper method to define the quad vertices of a bottom or top cap.
+        """
         normal = Vec3(0, 0, 1) if self.invert else Vec3(0, 0, -1)
         segs_cap = self.segs_bc if bottom else self.segs_tc
 
@@ -92,8 +95,8 @@ class EllipticalPrism(ProceduralGeometry):
 
         # cap quad vertices
         for i in range(n, segs_cap + 1 - n):
-            rj = self.inner_major + self.major_thickness * (i + n) / segs_cap
-            rn = self.inner_minor + self.minor_thickness * (i + n) / segs_cap
+            rj = self.semi_inner_major + self.major_thickness * (i + n) / segs_cap
+            rn = self.semi_inner_minor + self.minor_thickness * (i + n) / segs_cap
 
             for j in range(self.segs_c + 1):
                 angle = self.delta_rad * j + (0 if self.invert else self.slice_rad)
@@ -101,9 +104,9 @@ class EllipticalPrism(ProceduralGeometry):
                 s = math.sin(angle) * direction
                 vertex = Point3(rj * c, rn * s, height)
 
-                u = 0.5 + c * 0.5 * (rj / self.major_axis)
+                u = 0.5 + c * 0.5 * (rj / self.semi_major_axis)
                 _direction = -direction if bottom else direction
-                v = 0.5 + s * 0.5 * _direction * (rn / self.minor_axis)
+                v = 0.5 + s * 0.5 * _direction * (rn / self.semi_minor_axis)
 
                 vdata_values.extend([*vertex, *self.color, *normal, *(u, v)])
                 vertex_cnt += 1
@@ -152,10 +155,9 @@ class EllipticalPrism(ProceduralGeometry):
 
             for j in range(self.segs_c + 1):
                 angle = self.delta_rad * j + (0 if self.invert else self.slice_rad)
-                x = self.major_axis * math.cos(angle)
-                y = self.minor_axis * math.sin(angle) * direction
+                x = self.semi_major_axis * math.cos(angle)
+                y = self.semi_minor_axis * math.sin(angle) * direction
                 vertex = Point3(x, y, z)
-
                 normal = Vec3(x, y, 0.0).normalized() * direction
                 u = j / self.segs_c
                 uv = Vec2(u, v)
@@ -229,8 +231,9 @@ class EllipticalPrism(ProceduralGeometry):
                 v = i / self.segs_sc_a
 
                 for j in range(self.segs_sc_r + 1):
-                    rj = self.inner_major + (self.major_axis - self.inner_major) * j / self.segs_sc_r
-                    rn = self.inner_minor + (self.minor_axis - self.inner_minor) * j / self.segs_sc_r
+                    rj = self.semi_inner_major + self.major_thickness * j / self.segs_sc_r
+                    rn = self.semi_inner_minor + self.minor_thickness * j / self.segs_sc_r
+
                     vertex = Point3(rj, 0, z) if is_start else Point3(rj * c, rn * s, z)
                     coef = 0.5 if is_start else -0.5
                     u = 0.5 + coef * rj / self.major_axis * direction * -1
@@ -260,20 +263,29 @@ class EllipticalPrism(ProceduralGeometry):
         return vertex_cnt
 
     def define_variables(self):
-        self.major_thickness = self.thickness if 0 < self.thickness < self.major_axis else self.major_axis
-        self.minor_thickness = self.thickness if 0 < self.thickness < self.minor_axis else self.minor_axis
-
-        self.inner_major = self.major_axis - self.major_thickness
-        self.inner_minor = self.minor_axis - self.minor_thickness
-        self.has_inner = True if self.inner_major and self.inner_minor else False
-
         self.slice_rad = math.pi * self.ring_slice_deg / 180
         self.delta_rad = math.pi * ((360 - self.ring_slice_deg) / 180) / self.segs_c
+        self.semi_major_axis = self.major_axis / 2
+        self.semi_minor_axis = self.minor_axis / 2
+        self.has_inner = False
+
+        self.major_thickness = self.thickness \
+            if 0 < self.thickness < self.semi_major_axis else self.semi_major_axis
+        self.minor_thickness = self.thickness \
+            if 0 < self.thickness < self.semi_minor_axis else self.semi_minor_axis
+
+        self.inner_major = self.major_axis - self.major_thickness * 2
+        self.inner_minor = self.minor_axis - self.minor_thickness * 2
+        self.semi_inner_major = self.inner_major / 2
+        self.semi_inner_minor = self.inner_minor / 2
+
+        if self.inner_major and self.inner_minor:
+            self.has_inner = True
 
     def get_geom_node(self):
         self.define_variables()
 
-        # Create an outer cylinder.
+        # Create an outer elliptical prism.
         vdata_values = array.array('f', [])
         prim_indices = array.array('H', [])
         vertex_cnt = 0
@@ -292,19 +304,28 @@ class EllipticalPrism(ProceduralGeometry):
         if self.ring_slice_deg and self.segs_sc_r and self.segs_sc_a:
             vertex_cnt += self.create_slice_cap_quads(vertex_cnt, vdata_values, prim_indices)
 
-        # Create an inner ellipse to connect it to the outer one.
+        # Create an inner elliptical prism to connect it to the outer one.
         if self.has_inner:
-            major_axis = self.major_axis - self.thickness
-            minor_axis = self.minor_axis - self.thickness
-
-            maker = EllipticalPrism(major_axis, minor_axis, 0, self.height, self.segs_c, self.segs_a,
-                                    0, 0, self.ring_slice_deg, 0, 0, not self.invert)
+            maker = EllipticalPrism(
+                major_axis=self.inner_major,
+                minor_axis=self.inner_minor,
+                thickness=0,
+                height=self.height,
+                segs_c=self.segs_c,
+                segs_a=self.segs_a,
+                segs_top_cap=0,
+                segs_bottom_cap=0,
+                ring_slice_deg=self.ring_slice_deg,
+                slice_caps_radial=0,
+                slice_caps_axial=0,
+                invert=not self.invert
+            )
 
             geom_node = maker.get_geom_node()
             self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
             return geom_node
 
-        # Create the geom node.
+        # Create a geom node.
         geom_node = self.create_geom_node(
             vertex_cnt, vdata_values, prim_indices, 'elliptical_prism')
         return geom_node
