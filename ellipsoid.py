@@ -31,22 +31,23 @@ class Ellipsoid(Sphere):
             invert (bool): whether or not the geometry should be rendered inside-out; default is False
     """
 
-    def __init__(self, major_axis=3, minor_axis=6, thickness=0.5, segs_h=40, segs_v=40,
-                 segs_top_cap=3, segs_bottom_cap=3, segs_slice_caps=2, slice_deg=180,
+    def __init__(self, major_axis=2, minor_axis=1, thickness=0, segs_h=40, segs_v=40,
+                 segs_top_cap=3, segs_bottom_cap=3, segs_slice_caps=2, slice_deg=0,
                  bottom_clip=-1., top_clip=1., invert=False):
-        super().__init__()
+        super().__init__(
+            segs_h=segs_h,
+            segs_v=segs_v,
+            segs_bottom_cap=segs_bottom_cap,
+            segs_top_cap=segs_top_cap,
+            segs_slice_caps=segs_slice_caps,
+            slice_deg=slice_deg,
+            bottom_clip=bottom_clip,
+            top_clip=top_clip,
+            invert=invert
+        )
         self.major_axis = major_axis
         self.minor_axis = minor_axis
         self.thickness = thickness
-        self.segs_h = segs_h
-        self.segs_v = segs_v
-        self.segs_tc = segs_top_cap
-        self.segs_bc = segs_bottom_cap
-        self.segs_sc = segs_slice_caps
-        self.slice_deg = slice_deg
-        self.bottom_clip = bottom_clip
-        self.top_clip = top_clip
-        self.invert = invert
 
     def get_cap_axis(self, cap):
         """Helper method to get the length of the major_axis and minor_axis
