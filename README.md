@@ -28,7 +28,7 @@ And this repositroy is also a submodule for
 * When instantiating, change parameters as necessary.
 * Returnd model is a NodePath of Panda3D.
 ```
-from shapes.src import Box
+from shapes import Box
 
 box_maker = Box()
 model = box_maker.create() 
