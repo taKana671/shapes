@@ -657,15 +657,17 @@ class Sphere(ProceduralGeometry):
         return geom_node
 
 
-class QuickSphere(ProceduralGeometry):
+class Icosphere(ProceduralGeometry):
     """Create a sphere model from icosahedron quickly.
         Arges:
-            divnum (int): the number of divisions of one triangle; cannot be negative;
+            divnum (int): the number of divisions of one triangle; cannot be negative.
+            scale (float): the size of sphere; greater than 0.
     """
 
-    def __init__(self, divnum=3):
+    def __init__(self, divnum=3, scale=1):
         super().__init__()
         self.divnum = divnum
+        self.scale = scale
         self.color = (1, 1, 1, 1)
 
     def calc_midpoints(self, face):
@@ -725,14 +727,18 @@ class QuickSphere(ProceduralGeometry):
         start = 0
 
         for face in faces:
-            face_verts = [Vec3(*vertices[n]) for n in face]
+            face_verts = [Vec3(*vertices[n]) * 2 for n in face]
             for subdiv_face in self.subdivide(face_verts):
                 for vert in subdiv_face:
                     normal = vert.normalized()
-                    vdata_values.extend(normal)
-                    vdata_values.extend(self.color)
-                    vdata_values.extend(normal)
-                    vdata_values.extend((0, 0))
+                    vdata_values.extend(normal * self.scale)  # vertex
+                    vdata_values.extend(self.color)           # color
+                    vdata_values.extend(normal)               # normal
+
+                    # abs(normal.y): to prevent jagged vertical lines appear on the texture.
+                    u = 0.5 + (np.arctan2(normal.x, abs(normal.y))) / (2 * np.pi)
+                    v = 0.5 + np.arcsin(normal.z) / np.pi
+                    vdata_values.extend((u, v))
 
                 indices = (start, start + 1, start + 2)
                 prim_indices.extend(indices)
