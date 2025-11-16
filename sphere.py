@@ -657,15 +657,17 @@ class Sphere(ProceduralGeometry):
         return geom_node
 
 
-class QuickSphere(ProceduralGeometry):
+class Icosphere(ProceduralGeometry):
     """Create a sphere model from icosahedron quickly.
         Arges:
-            divnum (int): the number of divisions of one triangle; cannot be negative;
+            divnum (int): the number of divisions of one triangle; cannot be negative.
+            scale (float): the size of sphere; greater than 0.
     """
 
-    def __init__(self, divnum=3):
+    def __init__(self, divnum=3, scale=1):
         super().__init__()
         self.divnum = divnum
+        self.scale = scale
         self.color = (1, 1, 1, 1)
 
     def calc_midpoints(self, face):
@@ -729,40 +731,14 @@ class QuickSphere(ProceduralGeometry):
             for subdiv_face in self.subdivide(face_verts):
                 for vert in subdiv_face:
                     normal = vert.normalized()
-                    vdata_values.extend(normal * 2)
-                    # vdata_values.extend(vert)
-                    vdata_values.extend(self.color)
-                    vdata_values.extend(normal)
-                    # vdata_values.extend((0, 0))
+                    vdata_values.extend(normal * self.scale)  # vertex
+                    vdata_values.extend(self.color)           # color
+                    vdata_values.extend(normal)               # normal
 
-                    # lat = math.acos(normal.y) / math.pi
-                    # lng = (math.atan2(normal.x, normal.z) + math.pi) / (2.0 * math.pi)
-                    # # lng = math.atan2(normal.x, normal.z) / (2.0 * math.pi)
-                    
-                    # u = 0.5 + (math.atan2(-normal.x, normal.y) / (2 * math.pi))
-                    # v = 0.5 + math.asin(normal.z) / math.pi
-                    # vdata_values.extend((u, v))
-
-                    # u = 0.5 + (np.arctan2(normal.x, normal.y)) / (2 * np.pi)
-                    # v = 0.5 + np.arcsin(normal.z) / np.pi
-                    # vdata_values.extend((u, v))
-
+                    # abs(normal.y): to prevent jagged vertical lines appear on the texture.
                     u = 0.5 + (np.arctan2(normal.x, abs(normal.y))) / (2 * np.pi)
                     v = 0.5 + np.arcsin(normal.z) / np.pi
                     vdata_values.extend((u, v))
-
-
-                    
-                    
-                    
-                    # vdata_values.extend((lng, lat))
-
-                    # vec2 uv = vec2(asin(vNormal.x) / PI + 0.5, asin(vNormal.y) / PI + 0.5) * 2. - 1.;
-                    # u = math.asin(normal.x) / math.pi + 0.5
-                    # v = math.asin(normal.y) / math.pi + 0.5
-                    # uv = Vec2(u, v) * 2.0 - 1
-                    # vdata_values.extend(uv)
-
 
                 indices = (start, start + 1, start + 2)
                 prim_indices.extend(indices)
