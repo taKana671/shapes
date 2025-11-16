@@ -18,7 +18,7 @@ And this repositroy is also a submodule for
 * numpy 2.2.4
 
 # Environment
-* Python 3.12
+* Python 3.13
 * Windows11
 
 # Usage of modules
