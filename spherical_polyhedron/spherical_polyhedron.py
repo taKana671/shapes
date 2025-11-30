@@ -52,6 +52,11 @@ class SphericalPolyhedron(TriangleGenerator):
 
         return (u, v)
 
+    def generate_triangles(self):
+        """must override in subclasses.
+        """
+        raise NotImplementedError
+
     def create_spehre(self, vdata_values, prim_indices):
         """Subdivide a triangle and normalize the vertex position vectors.
         """
