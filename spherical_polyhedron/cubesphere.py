@@ -1,4 +1,3 @@
-import array
 from functools import reduce
 
 from panda3d.core import Point3
@@ -14,7 +13,7 @@ class Cubesphere(SphericalPolyhedron):
     """
 
     def __init__(self, max_depth=4, scale=2):
-        super().__init__(max_depth, scale)
+        super().__init__(6 * 4, max_depth, scale)
 
     def generate_triangles(self):
         v = 0.57735027
@@ -46,16 +45,3 @@ class Cubesphere(SphericalPolyhedron):
             for p1, p2 in zip(tri, tri[1:] + tri[:1]):
                 for divided_tri in self.subdivide([p1, p2, center]):
                     yield divided_tri
-
-    def get_geom_node(self):
-        vertex_cnt = 4 ** self.max_depth * 6 * 4 * 3
-        type_code = 'H' if vertex_cnt <= 65535 else 'I'
-        vdata_values = array.array('f', [])
-        prim_indices = array.array(type_code, [])
-
-        self.create_spehre(vdata_values, prim_indices)
-
-        geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'cube_sphere')
-
-        return geom_node

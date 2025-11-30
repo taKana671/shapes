@@ -1,5 +1,3 @@
-import array
-
 from panda3d.core import Point3
 
 from .spherical_polyhedron import SphericalPolyhedron
@@ -12,8 +10,8 @@ class Icosphere(SphericalPolyhedron):
             scale (float): the size of sphere; greater than 0.
     """
 
-    def __init__(self, max_depth=5, scale=2):
-        super().__init__(max_depth, scale)
+    def __init__(self, max_depth=4, scale=2):
+        super().__init__(20, max_depth, scale)
 
     def generate_triangles(self):
         pts = [
@@ -44,16 +42,3 @@ class Icosphere(SphericalPolyhedron):
 
             for divided_tri in self.subdivide(tri):
                 yield divided_tri
-
-    def get_geom_node(self):
-        vertex_cnt = 4 ** self.max_depth * 20 * 3
-        type_code = 'H' if vertex_cnt <= 65535 else 'I'
-        vdata_values = array.array('f', [])
-        prim_indices = array.array(type_code, [])
-
-        self.create_spehre(vdata_values, prim_indices)
-
-        geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'icosphere')
-
-        return geom_node
