@@ -84,5 +84,4 @@ class SphericalPolyhedron(TriangleGenerator):
             self.__class__.__name__.lower()
         )
 
-        print(self.__class__.__name__.lower())
         return geom_node
