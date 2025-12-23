@@ -11,13 +11,12 @@ class Cubesphere(SphericalPolyhedron):
             max_depth (int): the number of divisions of one triangle; cannot be negative.
             scale (float): the size of sphere; greater than 0.
     """
+    vertex_value = 0.57735027
 
     def __init__(self, max_depth=4, scale=2):
         super().__init__(6 * 4, max_depth, scale)
 
     def generate_triangles(self):
-        v = 0.57735027
-
         pts = [
             [-1, -1, 1],
             [-1, 1, 1],
@@ -38,10 +37,10 @@ class Cubesphere(SphericalPolyhedron):
             [4, 5, 6, 7],
         ]
 
-        for face in faces:
-            tri = [Point3(*pts[i]) * v for i in face]
-            center = reduce(lambda x, y: x + y, tri, Point3()) / 4
+        for idx in faces:
+            face = [Point3(*pts[i]) * Cubesphere.vertex_value for i in idx]
+            center = reduce(lambda x, y: x + y, face, Point3()) / 4
 
-            for p1, p2 in zip(tri, tri[1:] + tri[:1]):
+            for p1, p2 in zip(face, face[1:] + face[:1]):
                 for divided_tri in self.subdivide([p1, p2, center]):
                     yield divided_tri
