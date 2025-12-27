@@ -7,22 +7,22 @@ from .create_geometry import ProceduralGeometry
 
 
 class Cone(ProceduralGeometry):
+    """A class to create a cone.
 
-    """Create a Cone model.
-    Args:
-        height (float): height of the cone
-        segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3
-        segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1
-        bottom_cap (int): radial subdivisions of the bottom cap; 0 (no cap)
-        top_cap(int): radial subdivisions of the top cap; 0 (no cap)
-        slice_deg (float): the angle of the pie slice removed from the cone, in degrees
-        bottom_radius (float): the bottom radius of the cone; cannot be negative
-        top_radius (float): the top radius of the cone; cannot be negative
-        bottom_inner_radius (float): the bottom inner radius of the cone; cannot be negative
-        top_inner_radius (float): the top inner radius of the cone; cannot be negative
-        slice_caps_radial (int): subdivisions of both slice caps, along the radius; 0 (no cap)
-        slice_caps_axisal (int): subdivisions of both slice caps, along the axis of rotation; 0 (no cap)
-        invert (bool): whether or not the geometry should be rendered inside-out; default is False
+        Args:
+            height (float): height of the cone.
+            segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3.
+            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1.
+            segs_bottom_cap (int): radial subdivisions of the bottom cap; 0 (no cap).
+            segs_top_cap(int): radial subdivisions of the top cap; 0 (no cap).
+            slice_deg (float): the angle of the pie slice removed from the cone, in degrees.
+            bottom_radius (float): the bottom radius of the cone; cannot be negative.
+            top_radius (float): the top radius of the cone; cannot be negative.
+            bottom_inner_radius (float): the bottom inner radius of the cone; cannot be negative.
+            top_inner_radius (float): the top inner radius of the cone; cannot be negative.
+            slice_caps_radial (int): subdivisions of both slice caps, along the radius; 0 (no cap).
+            slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; 0 (no cap).
+            invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 
     def __init__(self, height=2., segs_c=40, segs_a=2, segs_bottom_cap=2, segs_top_cap=2, slice_deg=0.,

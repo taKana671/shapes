@@ -15,18 +15,23 @@ class MatchSide:
 
 
 class RoundedEdgeBox(RoundedBox):
-    """Create a geom node of rounded edge box.
+    """A class to create a rounded edge box.
+
         Args:
-            width (float): dimension along the x-axis; more than zero.
-            depth (float): dimension along the y-axis; more than zero.
-            height (float): dimension along the z-axis; more than zero.
-            segs_w (int): the number of subdivisions in width; more than 1.
-            segs_d (int): the number of subdivisions in depth; more than 1.
-            segs_z (int): the number of subdivisions in height; more than 1.
-            thickness (float): offset of inner box sides; 0 means no inner box; must be less than corner_radius.
-            corner_radius (float): radius of the corner cylinders.
-            open_top(bool): if True, no top side.
-            open_bottom(bool): if True, no bottom side.
+            width (float): dimension along the x-axis; greater than zero.
+            depth (float): dimension along the y-axis; greater than zero.
+            height (float): dimension along the z-axis; greater than zero.
+            segs_w (int): the number of subdivisions in width; greater than 1.
+            segs_d (int): the number of subdivisions in depth; greater than 1.
+            segs_z (int): the number of subdivisions in height; greater than 1.
+            thickness (float):
+                offset of inner box sides; 0 means no inner box.
+                thickness <= corner_radius.
+            corner_radius (float):
+                radius of the corner cylinders.
+                corner_radius x 2 <= min(width, depth, self.heigh)
+            open_top (bool): True, no top side.
+            open_bottom (bool): True, no bottom side.
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 

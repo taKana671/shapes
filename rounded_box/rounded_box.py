@@ -122,19 +122,20 @@ class RoundedBox(Box):
 
 
 class VerticalRoundedEdge(Cylinder):
-    """Creates a vertical box edge cylinder model.
+    """A class to create a vertical cylinder on box edge.
+
        Args:
-            center (Point3): the center of a cylinder
-            start_angle_deg (int): from which angle to start slicing; by degree
-            radius (float): the radius of the cylinder; must be more than zero
-            inner_radius (float): the radius of the inner cylinder; must be less than radius or equal
-            height (float): length of the cylinder
-            segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3
-            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1
-            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0
-            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0
-            ring_slice_deg (int): the angle of the pie slice removed from the cylinder, in degrees; must be from 0 to 360
-            invert (bool): whether or not the geometry should be rendered inside-out; default is False
+            center (Point3): the center of a cylinder.
+            start_angle_deg (int): from which angle to start slicing; by degree.
+            radius (float): the radius of the cylinder; must be more than zero.
+            inner_radius (float): the radius of the inner cylinder; must be less than radius or equal.
+            height (float): length of the cylinder.
+            segs_c (int): subdivisions of the mantle along a circular cross-section; mininum = 3.
+            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum = 1.
+            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0.
+            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0.
+            ring_slice_deg (float): the angle of the pie slice removed from the cylinder, in degrees; must be from 0 to 360.
+            invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 
     def __init__(self, center, start_angle_deg, radius=1., inner_radius=0., height=1.,
@@ -251,22 +252,23 @@ class VerticalRoundedEdge(Cylinder):
 
 
 class HorizontalRoundedEdge(Cylinder):
-    """Creates a cylinder model.
+    """A class to create a horizontal cylinder on box edge.
+
        Args:
-            center (Point3): the center of a cylinder
-            start_angle_deg (int): from which angle to start slicing; by degree
-            radius (float): the radius of the cylinder; must be more than zero
-            inner_radius (float): the radius of the inner cylinder; must be less than radius or equal
-            height (float): length of the cylinder
-            segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3
-            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1
-            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0
-            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0
-            ring_slice_deg (int): the angle of the pie slice removed from the cylinder, in degrees; must be from 0 to 360
-            start_slice_cap (bool): if True, a cap is created on the slice start side; default is True
-            end_slice_cap (bool): if True, a cap is created on the opposite side of the slice start side; default is True
-            invert (bool): whether or not the geometry should be rendered inside-out; default is False
-            x_axis (bool): if true, parallel to x-axis; if false, parallel to y-axis
+            center (Point3): the center of a cylinder.
+            start_angle_deg (int): from which angle to start slicing; by degree.
+            radius (float): the radius of the cylinder; must be more than zero.
+            inner_radius (float): the radius of the inner cylinder; must be less than radius or equal.
+            height (float): length of the cylinder.
+            segs_c (int): subdivisions of the mantle along a circular cross-section; mininum = 3.
+            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum = 1.
+            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0.
+            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0.
+            ring_slice_deg (float): the angle of the pie slice removed from the cylinder, in degrees; must be from 0 to 360.
+            start_slice_cap (bool): if True, a cap is created on the slice start side; default is True.
+            end_slice_cap (bool): if True, a cap is created on the opposite side of the slice start side; default is True.
+            invert (bool): whether or not the geometry should be rendered inside-out; default is False.
+            x_axis (bool): if true, parallel to x-axis; if false, parallel to y-axis.
     """
 
     def __init__(self, center, start_angle_deg, radius=1., inner_radius=0., height=1.,
@@ -463,26 +465,26 @@ class HorizontalRoundedEdge(Cylinder):
 
 
 class QuarteredHemisphereCorner(CapsuleHemisphere):
+    """A class to create a hemisphere.
 
-    """Create a sphere model.
        Args:
-            center (Point3): the center of a sphere
-            start_angle_deg (int): from which angle to start slicing; by degree
-            radius (float): the radius of sphere; more than 0
-            inner_radius (float): the radius of the inner sphere; cannot be negative; must be in [0., radius]
-            segs_h(int): subdivisions along horizontal circles; minimum = 3
-            segs_v (int): subdivisions along vertical semicircles; minimum = 2
-            segs_slice_caps (int): radial subdivisions of the slice caps; minimum = 0 (no caps)
-            slice_deg (float): the angle of the pie slice removed from the sphere, in degrees; must be in [0., 360.]
+            center (Point3): the center of a sphere.
+            start_angle_deg (int): from which angle to start slicing; by degree.
+            radius (float): the radius of sphere; more than 0.
+            inner_radius (float): the radius of the inner sphere; cannot be negative; must be in [0., radius].
+            segs_h(int): subdivisions along horizontal circles; minimum = 3.
+            segs_v (int): subdivisions along vertical semicircles; minimum = 2.
+            segs_slice_caps (int): radial subdivisions of the slice caps; minimum = 0 (no caps).
+            slice_deg (float): the angle of the pie slice removed from the sphere, in degrees; must be in [0., 360.].
             bottom_clip (float):
-                relative height of the plane that cuts off a bottom part of the sphere;
-                must be in [-1., 1.] range;
+                relative height of the plane that cuts off a bottom part of the sphere.
+                must be in [-1., 1.] range.
                 -1. (no clipping)
             top_clip (float):
-                relative height of the plane that cuts off a top part of the sphere;
-                must be in [bottom_clip, 1.] range;
+                relative height of the plane that cuts off a top part of the sphere.
+                must be in [bottom_clip, 1.] range.
                 1. (no clipping);
-            invert (bool): whether or not the geometry should be rendered inside-out; default is False
+            invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 
     def __init__(self, center, start_angle_deg=0, radius=1., inner_radius=0, segs_h=40, segs_v=20,

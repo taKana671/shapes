@@ -9,26 +9,32 @@ from .sphere import Sphere
 
 
 class Ellipsoid(Sphere):
-    """Creates a ellipsoid model.
-       Args:
-            major_axis (float): the longest diameter; must be more than zero
-            minor_axis (float): the shortest diameter; must be more than zero
-            thickness (floar): the radial offset of major and minor axes; must be 0 < thickness < minor_axis
-            segs_h(int): subdivisions along horizontal circles; minimum = 3
-            segs_v (int): subdivisions along vertical semicircles; minimum = 2
-            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0
-            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0
-            segs_slice_caps (int): radial subdivisions of the slice caps; minimum = 0 (no caps)
-            slice_deg (float): the angle of the pie slice removed from the ellipsoid, in degrees; must be in [0., 360.]
+    """A class to create a ellipsoid.
+
+        Args:
+            major_axis (float): the longest diameter; must be greater than zero.
+            minor_axis (float): the shortest diameter; must be greater than zero.
+            thickness (floar):
+                the radial offset of major and minor axes.
+                thickness * 2 <= min(major_axis, minor_axis).
+                thickness * 2 <= (top_clip - bottom_clip) * minor_axis / 2
+            segs_h(int): subdivisions along horizontal circles; minimum = 3.
+            segs_v (int): subdivisions along vertical semicircles; minimum = 2.
+            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0.
+            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0.
+            segs_slice_caps (int): radial subdivisions of the slice caps; minimum = 0 (no caps).
+            slice_deg (float):
+                the angle of the pie slice removed from the ellipsoid, in degrees.
+                0 <= slice_deg <= 360
             bottom_clip (float):
-                relative height of the plane that cuts off a bottom part of the ellipsoid;
-                must be in [-1., 1.] range;
-                -1. (no clipping)
+                relative height of the plane that cuts off a bottom part of the ellipsoid.
+                -1.0 <= bottom_clip <= 1.0
+                -1.0 (no clipping)
             top_clip (float):
-                relative height of the plane that cuts off a top part of the ellipsoid;
-                must be in [bottom_clip, 1.] range;
-                1. (no clipping);
-            invert (bool): whether or not the geometry should be rendered inside-out; default is False
+                relative height of the plane that cuts off a top part of the ellipsoid.
+                bottom_clip <= top_clip <= 1.0
+                1. (no clipping)
+            invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 
     def __init__(self, major_axis=2, minor_axis=1, thickness=0, segs_h=40, segs_v=40,
@@ -449,12 +455,12 @@ class Ellipsoid(Sphere):
         self.has_inner = False
 
         if self.thickness > 0:
-            if (inner_major := self.major_axis - self.thickness * 2) > 0:
-                if (self.top_height - self.bottom_height) * 0.5 > self.major_axis - inner_major > 0:
-                    self.inner_major = inner_major
+            if (inner_major := self.major_axis - self.thickness * 2) >= 0:
+                self.inner_major = inner_major
 
-            if (inner_minor := self.minor_axis - self.thickness * 2) > 0:
-                self.inner_minor = inner_minor
+            if (inner_minor := self.minor_axis - self.thickness * 2) >= 0:
+                if self.top_height - self.bottom_height - self.thickness * 2 >= 0:
+                    self.inner_minor = inner_minor
 
             if self.inner_major and self.inner_minor:
                 self.has_inner = True

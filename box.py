@@ -7,22 +7,23 @@ from .create_geometry import ProceduralGeometry
 
 
 class Box(ProceduralGeometry):
-    """Create a geom node of cube or cuboid.
-        Arges:
-            width (float): dimension along the x-axis; more than zero.
-            depth (float): dimension along the y-axis; more than zero.
-            height (float): dimension along the z-axis; more than zero.
-            segs_w (int): the number of subdivisions in width; more than 1.
-            segs_d (int): the number of subdivisions in depth; more than 1.
-            segs_z (int): the number of subdivisions in height; more than 1.
+    """A class to create a cube or cuboid.
+
+        Args:
+            width (float): dimension along the x-axis; greater than zero.
+            depth (float): dimension along the y-axis; greater than zero.
+            height (float): dimension along the z-axis; greater than zero.
+            segs_w (int): the number of subdivisions in width; greater than 1.
+            segs_d (int): the number of subdivisions in depth; greater than 1.
+            segs_z (int): the number of subdivisions in height; greater than 1.
             thickness (float): offset of inner box sides; 0 means no inner box.
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
-            open_left(bool): if True, no left side.
-            open_right(bool): if True, no right side.
-            open_back(bool): if True, no back side.
-            open_front(bool): if True, no front side.
-            open_bottom(bool): if True, no bottom side.
-            open_top(bool): if True, no top side.
+            open_left (bool): True, no left side.
+            open_right (bool): True, no right side.
+            open_back (bool): True, no back side.
+            open_front (bool): True, no front side.
+            open_bottom (bool): True, no bottom side.
+            open_top (bool): True, no top side.
     """
 
     def __init__(self, width=1.0, depth=1.0, height=1.0, segs_w=2, segs_d=2, segs_z=2,

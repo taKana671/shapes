@@ -7,21 +7,27 @@ from .create_geometry import ProceduralGeometry
 
 
 class Torus(ProceduralGeometry):
+    """A class to create a torus.
 
-    """Create a Torus model.
-       Args:
-            segs_r (int): the number of segments of the ring; mininum is 3
-            segs_s (int): the number of segments of the cross-sections; mininum is 3
-            ring_radius (float): the radius of the ring; cannot be negative;
-            section_radius (float): the radius of the cross-sections perpendicular to the ring; cannot be negative;
-            section_inner_radius (float): the radius of the inner torus cross-sections
-            ring_slice_deg (float): the angle of the ring pie slice removed from the torus, in degrees
-            section_slice_deg (float): the angle of the section pie slice removed from the torus, in degrees
-            section_slice_start_cap (int): radial subdivisions of the cap at the start of the section slice; 0 (no cap)
-            section_slice_end_cap (int): radial subdivisions of the cap at the end of the section slice; 0 (no cap)
-            ring_slice_start_cap (int): radial subdivisions of the cap at the start of the ring slice; 0 (no cap)
-            ring_slice_end_cap (int): radial subdivisions of the cap at the end of the ring slice; 0 (no cap)
-            invert (bool): whether or not the geometry should be rendered inside-out; default is False
+        Args:
+            segs_r (int): the number of segments of the ring; mininum is 3.
+            segs_s (int): the number of segments of the cross-sections; mininum is 3.
+            ring_radius (float): the radius of the ring; greater than zero.
+            section_radius (float): the radius of the cross-sections perpendicular to the ring; greater than zero.
+            section_inner_radius (float):
+                the radius of the inner torus cross-sections.
+                section_inner_radius <= section_radius
+            ring_slice_deg (float):
+                the angle of the ring pie slice removed from the torus, in degrees.
+                0 <= ring_slice_deg <= 360
+            section_slice_deg (float):
+                the angle of the section pie slice removed from the torus, in degrees.
+                0 <= section_slice_deg <= 360
+            section_slice_start_cap (int): radial subdivisions of the cap at the start of the section slice; 0 (no cap).
+            section_slice_end_cap (int): radial subdivisions of the cap at the end of the section slice; 0 (no cap).
+            ring_slice_start_cap (int): radial subdivisions of the cap at the start of the ring slice; 0 (no cap).
+            ring_slice_end_cap (int): radial subdivisions of the cap at the end of the ring slice; 0 (no cap).
+            invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 
     def __init__(self, segs_r=40, segs_s=20, ring_radius=1., section_radius=.5, section_inner_radius=0.,

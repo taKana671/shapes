@@ -9,25 +9,30 @@ from .create_geometry import ProceduralGeometry
 
 
 class Sphere(ProceduralGeometry):
-    """Create a sphere model.
-       Args:
-            radius (float): the radius of sphere; more than 0;
-            inner_radius (float): the radius of the inner sphere; cannot be negative; must be in [0., radius]
-            segs_h(int): subdivisions along horizontal circles; minimum = 3
-            segs_v (int): subdivisions along vertical semicircles; minimum = 2
-            segs_bottom_cap (int): radial subdivisions of the bottom clipping cap; minimum = 0 (no cap)
-            segs_top_cap (int): radial subdivisions of the top clipping cap; minimum = 0 (no cap)
-            segs_slice_caps (int): radial subdivisions of the slice caps; minimum = 0 (no caps)
-            slice_deg (float): the angle of the pie slice removed from the sphere, in degrees; must be in [0., 360.]
+    """A class to create a sphere.
+
+        Args:
+            radius (float): the radius of sphere; greater than 0.
+            inner_radius (float):
+                the radius of the inner sphere.
+                0 <= inner_radius <= radius
+            segs_h(int): subdivisions along horizontal circles; minimum = 3.
+            segs_v (int): subdivisions along vertical semicircles; minimum = 2.
+            segs_bottom_cap (int): radial subdivisions of the bottom clipping cap; minimum = 0 (no cap).
+            segs_top_cap (int): radial subdivisions of the top clipping cap; minimum = 0 (no cap).
+            segs_slice_caps (int): radial subdivisions of the slice caps; minimum = 0 (no caps).
+            slice_deg (float):
+                the angle of the pie slice removed from the sphere, in degrees.
+                0 <= slice_deg <= 360
             bottom_clip (float):
-                relative height of the plane that cuts off a bottom part of the sphere;
-                must be in [-1., 1.] range;
-                -1. (no clipping)
+                relative height of the plane that cuts off a bottom part of the sphere.
+                -1.0 <= bottom_clip <= 1.0
+                -1.0 (no clipping)
             top_clip (float):
-                relative height of the plane that cuts off a top part of the sphere;
-                must be in [bottom_clip, 1.] range;
-                1. (no clipping);
-            invert (bool): whether or not the geometry should be rendered inside-out; default is False
+                relative height of the plane that cuts off a top part of the sphere.
+                bottom_clip <= top_clip <= 1.0
+                1.0 (no clipping);
+            invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 
     def __init__(self, radius=1., inner_radius=0, segs_h=40, segs_v=40,

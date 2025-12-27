@@ -10,16 +10,19 @@ from .sphere import Sphere
 
 
 class Capsule(Cylinder):
-    """Creates a capsule model.
+    """A class to creates a capsule.
+
        Args:
-            radius (float): the radius of the capsule; must be more than zero.
-            inner_radius (float): must be 0 < inner_radius < radius; for example, if radius is 1.0, inner radius is 0.8.
-            height (float): length of the capsule mantle; capsule total height is this height + radius * 2
+            radius (float): the radius of the capsule; must be greater than zero.
+            inner_radius (float): must be 0 <= inner_radius <= radius.
+            height (float): length of the capsule mantle; capsule total height is this height + radius * 2.
             segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3.
             segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1.
-            ring_slice_deg (int): the angle of the pie slice removed from the capsule, in degrees; must be from 0 to 360.
-            top_hemisphere (bool): if True, a top hemisphere is created.
-            bottom_hemisphere (bool): if True, a bottom hemisphere is created.
+            ring_slice_deg (float):
+                the angle of the pie slice removed from the capsule, in degrees.
+                0 <= ring_slice_deg <= 360
+            top_hemisphere (bool): True, a top hemisphere is created.
+            bottom_hemisphere (bool): True, a bottom hemisphere is created.
             slice_caps_radial (int): subdivisions of both slice caps, along the radius; minimum = 0.
             slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; minimum=0.
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.

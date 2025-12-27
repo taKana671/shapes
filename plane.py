@@ -7,12 +7,13 @@ from .create_geometry import ProceduralGeometry
 
 
 class Plane(ProceduralGeometry):
-    """Create a plane geom node.
-        Arges:
-            width (int): dimension along the x-axis; more than zero
-            depth (int): dimension along the y-axis; more than zero
-            segs_w (int) the number of subdivisions in width; positive integer
-            segs_d (int) the number of subdivisions in depth; positive integer
+    """A class to create a plane.
+
+        Args:
+            width (int): dimension along the x-axis; greater than zero.
+            depth (int): dimension along the y-axis; greater than zero.
+            segs_w (int) the number of subdivisions in width; positive integer.
+            segs_d (int) the number of subdivisions in depth; positive integer.
     """
 
     def __init__(self, width=1, depth=1, segs_w=2, segs_d=2):
