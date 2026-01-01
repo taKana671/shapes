@@ -10,18 +10,24 @@ class Cone(ProceduralGeometry):
     """A class to create a cone.
 
         Args:
-            height (float): height of the cone.
-            segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3.
-            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1.
-            segs_bottom_cap (int): radial subdivisions of the bottom cap; 0 (no cap).
-            segs_top_cap(int): radial subdivisions of the top cap; 0 (no cap).
-            slice_deg (float): the angle of the pie slice removed from the cone, in degrees.
-            bottom_radius (float): the bottom radius of the cone; cannot be negative.
-            top_radius (float): the top radius of the cone; cannot be negative.
-            bottom_inner_radius (float): the bottom inner radius of the cone; cannot be negative.
-            top_inner_radius (float): the top inner radius of the cone; cannot be negative.
-            slice_caps_radial (int): subdivisions of both slice caps, along the radius; 0 (no cap).
-            slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; 0 (no cap).
+            height (float): height of the cone; default is 2.
+            segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3; default is 40.
+            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1; default is 2.
+            segs_bottom_cap (int): radial subdivisions of the bottom cap; 0 (no cap); default is 2.
+            segs_top_cap(int): radial subdivisions of the top cap; 0 (no cap); default is 2.
+            slice_deg (float):
+                the angle of the pie slice removed from the cone, in degrees; default is 0.
+                0 <= slice_deg <= 360
+            bottom_radius (float): the bottom radius of the cone; greater than 0; default is 1.
+            top_radius (float): the top radius of the cone; greater than or equal to 0; default is 0.
+            bottom_inner_radius (float):
+                the bottom inner radius of the cone.
+                0 <= bottom_inner_radius <= bottom_radius; default is 0.
+            top_inner_radius (float)
+                the top inner radius of the cone.
+                0 <= top_inner_radius <= top_radius; default is 0.
+            slice_caps_radial (int): subdivisions of both slice caps, along the radius; 0 (no cap); default is 2.
+            slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; ; default is 2.
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 

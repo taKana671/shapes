@@ -10,18 +10,20 @@ class Cylinder(ProceduralGeometry):
     """A class to create a cylinder.
 
         Args:
-            radius (float): the radius of the cylinder; must be greater than zero.
-            inner_radius (float): the radius of the inner cylinder; must be less than radius or equal.
-            height (float): length of the cylinder, greater than zero.
-            segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3.
-            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1.
-            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0.
-            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0.
+            radius (float): the radius of the cylinder; must be greater than 0; default is 1.
+            inner_radius (float):
+                the inner radius of the cylinder.
+                0 <= inner_radius <= radius; default is 0.
+            height (float): length of the cylinder, greater than 0; default is 1.
+            segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3; default is 40.
+            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1; default is 2.
+            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0; default is 3.
+            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0; default is 3.
             ring_slice_deg (float):
                 the angle of the pie slice removed from the cylinder, in degrees.
-                0 <= ring_slice_deg <= 360
-            slice_caps_radial (int): subdivisions of both slice caps, along the radius; minimum = 0.
-            slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; minimum=0.
+                0 <= ring_slice_deg <= 360; default is 0.
+            slice_caps_radial (int): subdivisions of both slice caps, along the radius; minimum is 0; default is 2.
+            slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; minimum is 0; default is 2.
             start_slice_cap (bool): True, a cap is created on the slice start side; default is True.
             end_slice_cap (bool): True, a cap is created on the opposite side of the slice start side; default is True.
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
