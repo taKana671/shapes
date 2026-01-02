@@ -14,16 +14,17 @@ And this repositroy is also a submodule for
 ![Image](https://github.com/user-attachments/assets/2da62053-40d0-4938-bec3-13b6ba5424bc)
 
 # Requirements
-* Panda3D 1.10.15
-* numpy 2.2.4
+* Panda3D 1.10.16
+* numpy 2.2.6
 
 # Environment
 * Python 3.13
 * Windows11
+* Ubuntu 24.04.3
 
 # Usage of modules
 
-* There are 12 classes, including Cylinder, Sphere, Box, Torus, Cone, Plane, QuickSphere, Capsule, RightTriangularPrism, EllipticalPrism, CapsulePrism and RoundedCornerBox, but they all have the same usage.
+* There are 15 classes, including Cylinder, Sphere, Box, Torus, Cone, Plane, Capsule, Icosphere, Cubesphere and so on, but they all have the same usage.
 * Instantiate and call create method.
 * When instantiating, change parameters as necessary.
 * Returnd model is a NodePath of Panda3D.
