@@ -12,27 +12,27 @@ class Ellipsoid(Sphere):
     """A class to create a ellipsoid.
 
         Args:
-            major_axis (float): the longest diameter; must be greater than zero.
-            minor_axis (float): the shortest diameter; must be greater than zero.
-            thickness (floar):
+            major_axis (float): the longest diameter; must be greater than 0; default is 2.
+            minor_axis (float): the shortest diameter; must be greater than 0; default is 1.
+            thickness (float):
                 the radial offset of major and minor axes.
-                thickness * 2 <= min(major_axis, minor_axis).
-                thickness * 2 <= (top_clip - bottom_clip) * minor_axis / 2
-            segs_h(int): subdivisions along horizontal circles; minimum = 3.
-            segs_v (int): subdivisions along vertical semicircles; minimum = 2.
-            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0.
-            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0.
-            segs_slice_caps (int): radial subdivisions of the slice caps; minimum = 0 (no caps).
+                0 <= thickness x 2 <= (top_clip - bottom_clip) x min(minor_axis, major_axis) / 2.
+                default is 0.
+            segs_h(int): subdivisions along horizontal circles; minimum = 3; default is 40.
+            segs_v (int): subdivisions along vertical semicircles; minimum = 2; default is 40.
+            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0; default is 3.
+            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0; default is 3.
+            segs_slice_caps (int): radial subdivisions of the slice caps; minimum = 0; default is 2.
             slice_deg (float):
                 the angle of the pie slice removed from the ellipsoid, in degrees.
-                0 <= slice_deg <= 360
+                0 <= slice_deg <= 360; default is 0.
             bottom_clip (float):
                 relative height of the plane that cuts off a bottom part of the ellipsoid.
-                -1.0 <= bottom_clip <= 1.0
+                -1.0 <= bottom_clip <= 1.0; default is -1.
                 -1.0 (no clipping)
             top_clip (float):
                 relative height of the plane that cuts off a top part of the ellipsoid.
-                bottom_clip <= top_clip <= 1.0
+                bottom_clip <= top_clip <= 1.0; default is 1.
                 1. (no clipping)
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """

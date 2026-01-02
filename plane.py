@@ -10,13 +10,13 @@ class Plane(ProceduralGeometry):
     """A class to create a plane.
 
         Args:
-            width (int): dimension along the x-axis; greater than zero.
-            depth (int): dimension along the y-axis; greater than zero.
-            segs_w (int) the number of subdivisions in width; positive integer.
-            segs_d (int) the number of subdivisions in depth; positive integer.
+            width (float): dimension along the x-axis; greater than 0; default is 2.
+            depth (float): dimension along the y-axis; greater than 0; default is 2.
+            segs_w (int) the number of subdivisions in width; greater than 0; default is 6.
+            segs_d (int) the number of subdivisions in depth; greater than 0; default is 6.
     """
 
-    def __init__(self, width=1, depth=1, segs_w=2, segs_d=2):
+    def __init__(self, width=2, depth=2, segs_w=6, segs_d=6):
         super().__init__()
         self.width = width
         self.depth = depth

@@ -10,18 +10,21 @@ class RightTriangularPrism(ProceduralGeometry):
     """A class to create a right triangular prism.
 
         Args:
-            adjacent (float): the base of a right triangle; must be greater than zero.
-            opposite (float): the height of a right triangle; must be greater than zero.
+            adjacent (float): the base of a right triangle; must be greater than 0; default is 1.
+            opposite (float): the height of a right triangle; must be greater than 0; default is 2.
             inner_adjacent (float):
-                the base of a inner right triangle; must be greater than zero.
+                the base of a inner right triangle.
+                0 <= inner_adjacent <= adjacent; default is 0.
             inner_opposite (float):
-                the height of a inner right triangle; must be more than zero.
-            height (float): the height of a prism.
-            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1.
-            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0.
-            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0.
-            slice_caps_radial (int): subdivisions of both slice caps, along the radius; minimum = 0.
-            slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; minimum=0.
+                the height of a inner right triangle.
+                0 <= inner_opposite <= opposite; default is 0.
+            (Creating an inner_box requires both inner_adjacent and inner_opposite values.)
+            height (float): the height of a prism; greater than 0; default is 2.
+            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1; default is 2.
+            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0; default is 3.
+            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0; default is 3.
+            slice_caps_radial (int): subdivisions of both slice caps, along the radius; minimum = 0; default is 2.
+            slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; minimum=0; default is 2.
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 

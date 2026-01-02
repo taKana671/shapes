@@ -12,25 +12,25 @@ class Sphere(ProceduralGeometry):
     """A class to create a sphere.
 
         Args:
-            radius (float): the radius of sphere; greater than 0.
+            radius (float): the radius of sphere; greater than 0; default is 1.
             inner_radius (float):
                 the radius of the inner sphere.
-                0 <= inner_radius <= radius
-            segs_h(int): subdivisions along horizontal circles; minimum = 3.
-            segs_v (int): subdivisions along vertical semicircles; minimum = 2.
-            segs_bottom_cap (int): radial subdivisions of the bottom clipping cap; minimum = 0 (no cap).
-            segs_top_cap (int): radial subdivisions of the top clipping cap; minimum = 0 (no cap).
-            segs_slice_caps (int): radial subdivisions of the slice caps; minimum = 0 (no caps).
+                0 <= inner_radius <= radius; default is 0.
+            segs_h(int): subdivisions along horizontal circles; minimum = 3; default is 40.
+            segs_v (int): subdivisions along vertical circles; minimum = 2; default is 40.
+            segs_bottom_cap (int): radial subdivisions of the bottom clipping cap; minimum = 0 (no cap); default is 2.
+            segs_top_cap (int): radial subdivisions of the top clipping cap; minimum = 0 (no cap); default is 2.
+            segs_slice_caps (int): radial subdivisions of the slice caps; minimum = 0 (no caps); default is 2.
             slice_deg (float):
                 the angle of the pie slice removed from the sphere, in degrees.
-                0 <= slice_deg <= 360
+                0 <= slice_deg <= 360; default is 0.
             bottom_clip (float):
                 relative height of the plane that cuts off a bottom part of the sphere.
-                -1.0 <= bottom_clip <= 1.0
+                -1.0 <= bottom_clip <= 1.0; default is -1.
                 -1.0 (no clipping)
             top_clip (float):
                 relative height of the plane that cuts off a top part of the sphere.
-                bottom_clip <= top_clip <= 1.0
+                bottom_clip <= top_clip <= 1.0; default is 1.
                 1.0 (no clipping);
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
@@ -604,12 +604,12 @@ class Sphere(ProceduralGeometry):
     def define_variables(self):
         self.top_height = self.radius * self.top_clip
         self.bottom_height = self.radius * self.bottom_clip
+        self.thickness = self.radius - self.inner_radius
 
         if self.inner_radius:
-            if (self.top_height - self.bottom_height) * 0.5 <= self.radius - self.inner_radius:
+            if (self.top_height - self.bottom_height) * 0.5 <= self.thickness:
                 self.inner_radius = 0
 
-        self.thickness = self.radius - self.inner_radius
         self.slice_rad = math.pi * self.slice_deg / 180.
         self.delta_angle_h = math.pi * ((360 - self.slice_deg) / 180) / self.segs_h
 

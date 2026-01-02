@@ -10,21 +10,21 @@ class EllipticalPrism(ProceduralGeometry):
     """A class to creates a elliptical prism.
 
         Args:
-            major_axis (float): the longest diameter; must be greater than zero.
-            minor_axis (float): the shortest diameter; must be greater than zero.
+            major_axis (float): the longest diameter; must be greater than 0; default is 2.
+            minor_axis (float): the shortest diameter; must be greater than 0; default is 1.
             thickness (float):
                 the radial offset of major and minor axes.
-                thickness x 2 <= min(major_axis, minor_axis)
-            height (float): height of the elliptical prism; greater than zero.
-            segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3.
-            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1.
-            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0.
-            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0.
+                0 <= thickness x 2 <= min(major_axis, minor_axis); default is 0.
+            height (float): height of the elliptical prism; greater than 0; default is 1.
+            segs_c (int): subdivisions of the mantle along a circular cross-section; mininum is 3; default is 40.
+            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1; default is 2.
+            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0; default is 3.
+            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0; default is 3.
             ring_slice_deg (float):
-                the angle of the pie slice removed from the ellipse, in degrees.
-                0 <= ring_slice_deg <= 360
-            slice_caps_radial (int): subdivisions of both slice caps, along the radius; minimum = 0.
-            slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; minimum=0.
+                the angle of the pie slice removed from the elliptical prism, in degrees.
+                0 <= ring_slice_deg <= 360; default is 0.
+            slice_caps_radial (int): subdivisions of both slice caps, along the radius; minimum = 0; default is 2.
+            slice_caps_axial (int): subdivisions of both slice caps, along the axis of rotation; minimum=0; default is 2.
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 
