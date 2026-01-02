@@ -6,23 +6,31 @@ from .rounded_box import Sides, RoundedBox
 
 
 class RoundedCornerBox(RoundedBox):
-    """Create a geom node of rounded corner box.
+    """A class to create a rounded corner box.
+
         Args:
-            width (float): dimension along the x-axis; more than zero.
-            depth (float): dimension along the y-axis; more than zero.
-            height (float): dimension along the z-axis; more than zero.
-            segs_w (int): the number of subdivisions in width; more than 1.
-            segs_d (int): the number of subdivisions in depth; more than 1.
-            segs_z (int): the number of subdivisions in height; more than 1.
-            thickness (float): offset of inner box sides; 0 means no inner box; must be less than corner_radius.
-            open_top(bool): used only when thickness is 0; if True, no top side.
-            open_bottom(bool): used only when thickness is 0; if True, no bottom side.
+            width (float): dimension along the x-axis; greater than 0; default is 2.
+            depth (float): dimension along the y-axis; greater than 0; default is 2.
+            height (float): dimension along the z-axis; greater than 0; default is 2.
+            segs_w (int): the number of subdivisions in width; greater than 1; default is 4.
+            segs_d (int): the number of subdivisions in depth; greater than 1; default is 4.
+            segs_z (int): the number of subdivisions in height; greater than 1; default is 4.
+            thickness (float):
+                offset of the inner box sides.
+                greater than or equal to 0; 0 means no inner box; default is 0.
+                thickness <= corner_radius.
+            open_top (bool): used only when thickness is 0; True, no top side.
+            open_bottom (bool): used only when thickness is 0; True, no bottom side.
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
-            corner_radius (float): radius of the corner cylinders.
-            rounded_f_left(bool): if true, the left corner of the front side is rounded.
-            rounded_f_right(bool): if true, the right corner of the front side is rounded.
-            rounded_b_left(bool): if true, the left corner of the back side is rounded.
-            rounded_b_right(bool): if true, the right corner of the back side is rounded.
+            corner_radius (float):
+                radius of the corner cylinders.
+                0 <= corner_radius x 2 < min(width, depth); default is 0.5.
+                If 0 is specified, Box.get_geom_node is called, creating a cube.
+            rounded_f_left (bool):True, the left corner of the front side is rounded; default is True.
+            rounded_f_right (bool): True, the right corner of the front side is rounded; default is True.
+            rounded_b_left (bool): True, the left corner of the back side is rounded; default is True.
+            rounded_b_right (bool): True, the right corner of the back side is rounded; default is True.
+            (If corner_radius is 0, rounded_f_left, rounded_f_right, rounded_b_left, rounded_b_right are ignored.)
     """
 
     def __init__(self, width=2., depth=2., height=2., segs_w=4, segs_d=4, segs_z=4,
@@ -219,6 +227,10 @@ class RoundedCornerBox(RoundedBox):
         self.c_segs_bc = 0 if self.thickness <= 0 and self.open_bottom else self.segs_d
 
     def get_geom_node(self):
+        # If c_radius is 0, Box.get_geom_node is called, creating a cube.
+        if self.c_radius == 0:
+            return super().get_geom_node()
+
         self.define_variables()
 
         # Create outer rounded box.

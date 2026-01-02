@@ -6,20 +6,23 @@ from .rounded_box import Sides, RoundedBox
 
 
 class CapsulePrism(RoundedBox):
+    """A class to create a capsule prism.
 
-    """Create a geom node of capsule prism.
         Args:
-            width (float): dimension along the x-axis; more than zero.
-            depth (float): dimension along the y-axis; more than zero.
-            height (float): dimension along the z-axis; more than zero.
-            segs_w (int): the number of subdivisions in width; more than 1.
-            segs_d (int): the number of subdivisions in depth; more than 1.
-            segs_z (int): the number of subdivisions in height; more than 1.
-            thickness (float): offset of inner box sides; 0 means no inner box.
-            rounded_left (bool): if True, left side is rounded.
-            rounded_right (bool): if True, right side is rounded.
-            open_top(bool): used only when thickness is 0; if True, no top side.
-            open_bottom(bool): used only when thickness is 0; if True, no bottom side.
+            width (float): dimension along the x-axis; greater than 0; default is 1.
+            depth (float): dimension along the y-axis; greater than 0; default is 1.
+            height (float): dimension along the z-axis; greater than 0; default is 1.
+            segs_w (int): the number of subdivisions in width; greater than 1; default is 4.
+            segs_d (int): the number of subdivisions in depth; greater than 1; default is 4.
+            segs_z (int): the number of subdivisions in height; greater than 1; default is 4.
+            thickness (float):
+                offset of inner box sides; 0 means no inner capsule prism; default is 0.
+                thickness x 2 < depth.
+            rounded_left (bool): True, left side is rounded; default is True.
+            rounded_right (bool): True, right side is rounded; default is True.
+            open_top (bool): True, no top side; default is False.
+            open_bottom (bool): True, no bottom side; default is False.
+            (If thickness is 0, open_top and open_bottom are ignored.)
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 

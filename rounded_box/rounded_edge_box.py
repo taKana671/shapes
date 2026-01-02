@@ -15,18 +15,24 @@ class MatchSide:
 
 
 class RoundedEdgeBox(RoundedBox):
-    """Create a geom node of rounded edge box.
+    """A class to create a rounded edge box.
+
         Args:
-            width (float): dimension along the x-axis; more than zero.
-            depth (float): dimension along the y-axis; more than zero.
-            height (float): dimension along the z-axis; more than zero.
-            segs_w (int): the number of subdivisions in width; more than 1.
-            segs_d (int): the number of subdivisions in depth; more than 1.
-            segs_z (int): the number of subdivisions in height; more than 1.
-            thickness (float): offset of inner box sides; 0 means no inner box; must be less than corner_radius.
-            corner_radius (float): radius of the corner cylinders.
-            open_top(bool): if True, no top side.
-            open_bottom(bool): if True, no bottom side.
+            width (float): dimension along the x-axis; greater than 0; default is 2.
+            depth (float): dimension along the y-axis; greater than 0; default is 2.
+            height (float): dimension along the z-axis; greater than 0; default is 2.
+            segs_w (int): the number of subdivisions in width; greater than 1; default is 4.
+            segs_d (int): the number of subdivisions in depth; greater than 1; default is 4.
+            segs_z (int): the number of subdivisions in height; greater than 1; default is 4.
+            thickness (float):
+                offset of inner box sides.
+                greater than or equal to 0; 0 means no inner box; default is 0.
+                thickness <= corner_radius.
+            corner_radius (float):
+                radius of the corner cylinders.
+                0 <= corner_radius x 2 <= min(width, depth, heigh); default is 0.5.
+            open_top (bool): True, no top side.
+            open_bottom (bool): True, no bottom side.
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 
@@ -321,6 +327,10 @@ class RoundedEdgeBox(RoundedBox):
         self.c_segs_bc = 0
 
     def get_geom_node(self):
+        # If c_radius is 0, Box.get_geom_node is called, creating a cube.
+        if self.c_radius == 0:
+            return super().get_geom_node()
+
         self.define_variables()
 
         # Create outer rounded box.

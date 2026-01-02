@@ -4,8 +4,9 @@ from .spherical_polyhedron import SphericalPolyhedron
 
 
 class Icosphere(SphericalPolyhedron):
-    """Create a sphere model from icosahedron.
-        Arges:
+    """A class to create a sphere from icosahedron.
+
+        Args:
             max_depth (int): the number of divisions of one triangle; cannot be negative.
             scale (float): the size of sphere; greater than 0.
     """
