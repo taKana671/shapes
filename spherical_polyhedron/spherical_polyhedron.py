@@ -54,7 +54,7 @@ class SphericalPolyhedron(TriangleGenerator):
         return Point2(u, v)
     
     def fix_uv(self, uv_a, uv_b, uv_c):
-        """recalculate the UV to prevent distortion effects.
+        """recalculate the UV to prevent ziggzagging distortion effects.
             Args:
                 uv_a, uv_b, uv_c (panda3d.core.Point2):
                     UV coordinates, calculated by the self.calc_uv, for each vertex of the triangle.
