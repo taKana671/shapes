@@ -13,6 +13,21 @@ And this repositroy is also a submodule for
 ![Image](https://github.com/user-attachments/assets/40ca644a-a478-467d-9f72-1ca3e32b4fc2)
 ![Image](https://github.com/user-attachments/assets/2da62053-40d0-4938-bec3-13b6ba5424bc)
 
+# Icosphere and Cubesphere
+
+![Image](https://github.com/user-attachments/assets/4cd3331b-5528-4f62-b479-f17457a1ef0a)
+
+Initially, the UV calculations for the icosphere and cubesphere did not work properly, resulting in ziggzagging distortion effect. 
+By recalculating the UVs using the following site as a reference, I was able to prevent that effect.
+
+- https://observablehq.com/@mourner/uv-mapping-an-icosphere
+
+![Image](https://github.com/user-attachments/assets/02863980-7981-4996-8ad5-f965df67021d)
+
+
+
+
+
 # Requirements
 * Panda3D 1.10.16
 * numpy 2.2.6
