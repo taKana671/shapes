@@ -86,7 +86,7 @@ class SphericalPolyhedron(TriangleGenerator):
         """
         raise NotImplementedError
 
-    def create_spehre(self, vdata_values, prim_indices):
+    def create_sphere(self, vdata_values, prim_indices):
         """Subdivide a triangle and normalize the vertex position vectors.
         """
         for i, tri in enumerate(self.generate_triangles()):
@@ -111,7 +111,7 @@ class SphericalPolyhedron(TriangleGenerator):
         vdata_values = array.array('f', [])
         prim_indices = array.array(type_code, [])
 
-        self.create_spehre(vdata_values, prim_indices)
+        self.create_sphere(vdata_values, prim_indices)
 
         geom_node = self.create_geom_node(
             vertex_cnt,
