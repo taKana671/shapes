@@ -30,7 +30,7 @@ class EllipticalPrism(ProceduralGeometry):
 
     def __init__(self, major_axis=2., minor_axis=1., thickness=0., height=1., segs_c=40, segs_a=2, segs_top_cap=3,
                  segs_bottom_cap=3, ring_slice_deg=0., slice_caps_radial=2, slice_caps_axial=2, invert=False):
-        super().__init__()
+        self.color = (1, 1, 1, 1)
         self.major_axis = major_axis
         self.minor_axis = minor_axis
         self.thickness = thickness
@@ -332,5 +332,5 @@ class EllipticalPrism(ProceduralGeometry):
 
         # Create a geom node.
         geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'elliptical_prism')
+            vertex_cnt, vdata_values, prim_indices, self.__class__.__name__.lower())
         return geom_node

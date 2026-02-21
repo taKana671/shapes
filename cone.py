@@ -34,7 +34,7 @@ class Cone(ProceduralGeometry):
     def __init__(self, height=2., segs_c=40, segs_a=2, segs_bottom_cap=2, segs_top_cap=2, slice_deg=0.,
                  bottom_radius=1., top_radius=0., bottom_inner_radius=0., top_inner_radius=0.,
                  slice_caps_radial=2, slice_caps_axial=2, invert=False):
-        super().__init__()
+        self.color = (1, 1, 1, 1)
         self.height = height
         self.segs_c = segs_c
         self.segs_a = segs_a
@@ -334,5 +334,5 @@ class Cone(ProceduralGeometry):
 
         # Create the geom node.
         geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'cone')
+            vertex_cnt, vdata_values, prim_indices, self.__class__.__name__.lower())
         return geom_node

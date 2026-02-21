@@ -13,9 +13,6 @@ class Cubesphere(SphericalPolyhedron):
             scale (float): the size of sphere; greater than 0.
     """
 
-    def __init__(self, max_depth=4, scale=2):
-        super().__init__(6 * 4, max_depth, scale)
-
     def generate_triangles(self):
         v = 0.57735027
 
@@ -44,5 +41,9 @@ class Cubesphere(SphericalPolyhedron):
             center = reduce(lambda x, y: x + y, tri, Point3()) / 4
 
             for p1, p2 in zip(tri, tri[1:] + tri[:1]):
-                for divided_tri in self.subdivide([p1, p2, center]):
-                    yield divided_tri
+                tri = [p1, p2, center]
+                yield tri
+
+    def get_geom_node(self):
+        faces = 6 * 4
+        return self.create_sphere_geom_node(faces)

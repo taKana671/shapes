@@ -3,8 +3,8 @@ from enum import Flag, auto
 
 from panda3d.core import Vec3, Point3, Vec2
 
-from ..box import Box
-from ..cylinder import Cylinder
+from ..box import BasicBox
+from ..cylinder import BasicCylinder
 from ..capsule import CapsuleHemisphere
 
 
@@ -23,7 +23,7 @@ class Sides(Flag):
     BACK_RIGHT = BACK | RIGHT
 
 
-class RoundedBox(Box):
+class BasicRoundedBox(BasicBox):
 
     def create_sides(self, vertex_cnt, vdata_values, prim_indices):
         for plane in ('xyz', 'zxy', 'yzx'):
@@ -121,7 +121,7 @@ class RoundedBox(Box):
         return vertex_cnt
 
 
-class VerticalRoundedEdge(Cylinder):
+class VerticalRoundedEdge(BasicCylinder):
     """A class to create a vertical cylinder on box edge.
 
        Args:
@@ -251,7 +251,7 @@ class VerticalRoundedEdge(Cylinder):
         return vertex_cnt
 
 
-class HorizontalRoundedEdge(Cylinder):
+class HorizontalRoundedEdge(BasicCylinder):
     """A class to create a horizontal cylinder on box edge.
 
        Args:

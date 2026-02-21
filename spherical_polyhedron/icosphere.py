@@ -11,9 +11,6 @@ class Icosphere(SphericalPolyhedron):
             scale (float): the size of sphere; greater than 0.
     """
 
-    def __init__(self, max_depth=4, scale=2):
-        super().__init__(20, max_depth, scale)
-
     def generate_triangles(self):
         pts = [
             [-0.52573111, -0.72360680, 0.44721360],
@@ -40,6 +37,8 @@ class Icosphere(SphericalPolyhedron):
 
         for face in faces:
             tri = [Point3(*pts[i]) for i in face]
+            yield tri
 
-            for divided_tri in self.subdivide(tri):
-                yield divided_tri
+    def get_geom_node(self):
+        faces = 20
+        return self.create_sphere_geom_node(faces)

@@ -2,7 +2,8 @@ import array
 
 from panda3d.core import Point3, Point2
 
-from .rounded_box import Sides, RoundedBox
+from ..create_geometry import ProceduralGeometry
+from .rounded_box import Sides, BasicRoundedBox
 
 
 class MatchSide:
@@ -14,7 +15,7 @@ class MatchSide:
         return side in self.side
 
 
-class RoundedEdgeBox(RoundedBox):
+class RoundedEdgeBox(BasicRoundedBox, ProceduralGeometry):
     """A class to create a rounded edge box.
 
         Args:
@@ -363,6 +364,6 @@ class RoundedEdgeBox(RoundedBox):
 
         # Create the geom node.
         geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'rounded_edge_box')
+            vertex_cnt, vdata_values, prim_indices, self.__class__.__name__.lower())
 
         return geom_node

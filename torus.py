@@ -35,7 +35,7 @@ class Torus(ProceduralGeometry):
     def __init__(self, segs_r=40, segs_s=20, ring_radius=1., section_radius=.5, section_inner_radius=0.,
                  ring_slice_deg=0, section_slice_deg=0, section_slice_start_cap=2,
                  section_slice_end_cap=2, ring_slice_start_cap=2, ring_slice_end_cap=2, invert=False):
-        super().__init__()
+        self.color = (1, 1, 1, 1)
         self.segs_r = segs_r
         self.segs_s = segs_s
         self.ring_radius = ring_radius
@@ -289,5 +289,5 @@ class Torus(ProceduralGeometry):
 
         # Create the geom node.
         geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'torus')
+            vertex_cnt, vdata_values, prim_indices, self.__class__.__name__.lower())
         return geom_node

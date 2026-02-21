@@ -17,7 +17,7 @@ class Plane(ProceduralGeometry):
     """
 
     def __init__(self, width=2, depth=2, segs_w=6, segs_d=6):
-        super().__init__()
+        self.color = (1, 1, 1, 1)
         self.width = width
         self.depth = depth
         self.segs_w = segs_w
@@ -54,6 +54,6 @@ class Plane(ProceduralGeometry):
 
         vertex_cnt = (self.segs_w + 1) * (self.segs_d + 1)
         geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'plane')
+            vertex_cnt, vdata_values, prim_indices, self.__class__.__name__.lower())
 
         return geom_node

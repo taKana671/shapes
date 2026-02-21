@@ -30,7 +30,7 @@ class RightTriangularPrism(ProceduralGeometry):
 
     def __init__(self, adjacent=1., opposite=2., inner_adjacent=0, inner_opposite=0., height=2., segs_a=2,
                  segs_top_cap=3, segs_bottom_cap=3, slice_caps_radial=2, slice_caps_axial=2, invert=False):
-        super().__init__()
+        self.color = (1, 1, 1, 1)
         self.adjacent = adjacent
         self.opposite = opposite
         self.inner_adjacent = inner_adjacent
@@ -313,5 +313,5 @@ class RightTriangularPrism(ProceduralGeometry):
 
         # Create the geom node.
         geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'triangular_prism')
+            vertex_cnt, vdata_values, prim_indices, self.__class__.__name__.lower())
         return geom_node

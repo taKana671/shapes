@@ -6,7 +6,7 @@ from panda3d.core import Vec3, Point3
 from .create_geometry import ProceduralGeometry
 
 
-class Box(ProceduralGeometry):
+class BasicBox:
     """A class to create a cube or cuboid.
 
         Args:
@@ -31,7 +31,7 @@ class Box(ProceduralGeometry):
     def __init__(self, width=1.0, depth=1.0, height=1.0, segs_w=2, segs_d=2, segs_z=2,
                  thickness=0, invert=False, open_left=False, open_right=False, open_back=False,
                  open_front=False, open_bottom=False, open_top=False):
-        super().__init__()
+        self.color = (1, 1, 1, 1)
         self.width = width
         self.depth = depth
         self.height = height
@@ -233,6 +233,9 @@ class Box(ProceduralGeometry):
         center = inner_center + self.center
         return center
 
+
+class Box(BasicBox, ProceduralGeometry):
+
     def get_geom_node(self):
         self.define_variables()
 
@@ -271,6 +274,6 @@ class Box(ProceduralGeometry):
 
         # Create the geom node.
         geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'box')
+            vertex_cnt, vdata_values, prim_indices, self.__class__.__name__.lower())
 
         return geom_node
