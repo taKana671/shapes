@@ -6,7 +6,7 @@ from panda3d.core import Vec3, Point3, Vec2
 from .create_geometry import ProceduralGeometry
 
 
-class Cylinder(ProceduralGeometry):
+class BasicCylinder:
     """A class to create a cylinder.
 
         Args:
@@ -32,7 +32,7 @@ class Cylinder(ProceduralGeometry):
     def __init__(self, radius=1., inner_radius=0., height=1., segs_c=40, segs_a=2, segs_top_cap=3,
                  segs_bottom_cap=3, ring_slice_deg=0, slice_caps_radial=3, slice_caps_axial=2,
                  start_slice_cap=True, end_slice_cap=True, invert=False):
-        super().__init__()
+        self.color = (1, 1, 1, 1)
         self.radius = radius
         self.inner_radius = inner_radius
         self.height = height
@@ -306,6 +306,9 @@ class Cylinder(ProceduralGeometry):
         if self.end_slice_cap:
             self.slice_caps.append(False)
 
+
+class Cylinder(BasicCylinder, ProceduralGeometry):
+
     def get_geom_node(self):
         self.define_variables()
 
@@ -341,5 +344,5 @@ class Cylinder(ProceduralGeometry):
 
         # Create the geom node.
         geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'cylinder')
+            vertex_cnt, vdata_values, prim_indices, self.__class__.__name__.lower())
         return geom_node

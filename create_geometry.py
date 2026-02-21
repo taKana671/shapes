@@ -1,14 +1,16 @@
+from abc import ABC, abstractmethod
+
 from panda3d.core import NodePath
 from panda3d.core import Geom, GeomNode, GeomTriangles
 from panda3d.core import Mat4, Vec3
 from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexArrayFormat
 
 
-class ProceduralGeometry:
+class ProceduralGeometry(ABC):
 
-    def __init__(self):
-        self.fmt, self.stride = self.create_format()
-        self.color = (1, 1, 1, 1)
+    @abstractmethod
+    def get_geom_node(self, vertex_count, vdata_values, prim_indices):
+        pass
 
     def create(self):
         geom_node = self.get_geom_node()
@@ -31,18 +33,22 @@ class ProceduralGeometry:
         arr_format.add_column('texcoord', 2, Geom.NTFloat32, Geom.CTexcoord)
 
         fmt = GeomVertexFormat.register_format(arr_format)
-        stride = 12  # number of floats on each vertex data row
-        return fmt, stride
+        # stride = 12  # number of floats on each vertex data row
+        # return fmt, stride
+
+        return fmt
 
     def create_geom_node(self, vertex_count, vdata_values, prim_indices, name='vertex'):
         """Args:
-            fmt (GeomVertexFormat): physical layout of the vertex data stored within a Geom.
-            name (str): the name of data.
+            # fmt (GeomVertexFormat): physical layout of the vertex data stored within a Geom.
             vertex_count (int): the number of vertices.
             vdata_values (array.array): vertex information.
             prim_indices (array.array): vertex order.
+            name (str): the name of data.
         """
-        vdata = GeomVertexData(name, self.fmt, Geom.UHStatic)
+        fmt = self.create_format()
+        vdata = GeomVertexData(name, fmt, Geom.UHStatic)
+        # vdata = GeomVertexData(name, self.fmt, Geom.UHStatic)
         vdata.unclean_set_num_rows(vertex_count)
         vdata_mem = memoryview(vdata.modify_array(0)).cast('B').cast('f')
         vdata_mem[:] = vdata_values
@@ -95,7 +101,16 @@ class ProceduralGeometry:
         geom = geom_node.modify_geom(0)
         vdata = geom.modify_vertex_data()
         old_vert_cnt = vdata.get_num_rows()
-        old_vert_size = old_vert_cnt * self.stride
+        # import pdb; pdb.set_trace()
+
+        # ##############
+        fmt = vdata.get_format()
+        cols = fmt.get_columns()
+        stride = sum(col.get_num_components() for col in cols)
+        # #################
+
+        # old_vert_size = old_vert_cnt * self.stride
+        old_vert_size = old_vert_cnt * stride
         vdata.set_num_rows(old_vert_cnt + add_vert_cnt)
         vdata_mem = memoryview(vdata.modify_array(0)).cast('B').cast('f')
         vdata_mem[old_vert_size:] = add_vdata

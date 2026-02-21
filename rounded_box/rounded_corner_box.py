@@ -2,10 +2,11 @@ import array
 
 from panda3d.core import Point3, Point2
 
-from .rounded_box import Sides, RoundedBox
+from ..create_geometry import ProceduralGeometry
+from .rounded_box import Sides, BasicRoundedBox
 
 
-class RoundedCornerBox(RoundedBox):
+class RoundedCornerBox(BasicRoundedBox, ProceduralGeometry):
     """A class to create a rounded corner box.
 
         Args:
@@ -272,6 +273,6 @@ class RoundedCornerBox(RoundedBox):
 
         # Create the geom node.
         geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'rounded_corner_box')
+            vertex_cnt, vdata_values, prim_indices, self.__class__.__name__.lower())
 
         return geom_node

@@ -5,10 +5,11 @@ from types import SimpleNamespace
 import numpy as np
 from panda3d.core import Vec3, Point3, Vec2
 
-from .sphere import Sphere
+from .create_geometry import ProceduralGeometry
+from .sphere import BasicSphere
 
 
-class Ellipsoid(Sphere):
+class Ellipsoid(BasicSphere, ProceduralGeometry):
     """A class to create a ellipsoid.
 
         Args:
@@ -524,5 +525,5 @@ class Ellipsoid(Sphere):
 
         # Create a geom node.
         geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'ellipsoid')
+            vertex_cnt, vdata_values, prim_indices, self.__class__.__name__.lower())
         return geom_node

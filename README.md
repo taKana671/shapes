@@ -25,9 +25,6 @@ By recalculating the UVs using the following site as a reference, I was able to 
 ![Image](https://github.com/user-attachments/assets/02863980-7981-4996-8ad5-f965df67021d)
 
 
-
-
-
 # Requirements
 * Panda3D 1.10.16
 * numpy 2.2.6
@@ -50,5 +47,342 @@ box_maker = Box()
 model = box_maker.create() 
 ```
 
+# Class Diagram
 
+```mermaid
+classDiagram
+  class _ProceduralGeometry_{
+    <<abstract>>
+    +*get_geom_node*()
+    +create()
+    +modeling()
+    +create_format()
+    +create_geom_node()
+    +tranform_vertices()
+    +add()
+    +merge_geom()
+   }
 
+  namespace cylinder {
+    class BasicCylinder{
+      +\_\_init\_\_()
+      +create_bottom_cap_triangles()
+      +create_bottom_cap_quads()
+      +create_mantle_quads()
+      +create_top_cap_triangles()
+      +create_top_cap_quads()
+      +create_cylinder()
+      +create_cap_triangles()
+      +create_cap_quad_vertices()
+      +create_mantle_quad_vertices()    
+      +create_slice_cap_quad_vertices()
+      +create_slice_cap_quads()
+      +define_variables()
+    }
+
+    class Cylinder{
+      +get_geom_node()
+    }
+
+    class RandomPolygonalPrism{
+      +\_\_init\_\_()
+      +create_cap_triangles()
+      +create_cap_quad_vertices()
+      +create_mantle_quad_vertices()
+      +calc_delta_rad()
+      +generage_delta_rad()
+      +define_variables()
+      +get_geom_node()
+    }
+  }
+
+  namespace capsule {
+    class Capsule{
+      +\_\_init\_\_()
+      +create_hemisphere()
+      +create_bottom()
+      +create_mantle()
+      +create_top()
+      +create_slice_caps()
+      +get_geom_node()
+    }
+
+    class CapsuleHemisphere{
+      +\_\_init\_\_()
+      +get_cap_edge_vertices()
+      +create_cap_edge_vertices()
+      +create_bottom()
+      +create_top()
+      +create_mantle_quads()
+      +get_hollow_cap_inner_vertices()
+      +get_closed_cap_inner_vertices()
+      +create_slice_cap()
+    }
+  }
+
+  namespace box {
+    class BasicBox{
+      +\_\_init\_\_()
+      +define_vertex_order()
+      +create_side()
+      +create_thick_side()
+      +get_plane_details()
+      +create_sides()
+      +define_inner_details()
+      +define_variables()
+      +calc_inner_box_center()
+    }
+
+    class Box{
+      +get_geom_node()
+    }
+  }
+
+  namespace basic_roundedbox {
+    class RoundedBox{
+      +create_sides()
+      +create_vertical_edge_cylinder()
+      +create_horizontal_edge_cylinder()
+      +create_corner_sphere()
+    }
+
+    class VerticalRoundedEdge{
+      +\_\_init\_\_()
+      +create_cap_triangles()
+      +create_cap_quad_vertices()
+      +create_mantle_quad_vertices()
+    }
+
+    class HorizontalRoundedEdge{
+      +\_\_init\_\_()
+      +get_cap_normal()
+      +create_cap_triangles()
+      +create_cap_quad_vertices()
+      +create_mantle_quad_vertices()
+      +get_slice_cap_angle()
+      +create_slice_cap_quad_vertices()
+      +define_variables()
+    }
+
+    class QuarteredHemisphereCorner{
+      +\_\_init\_\_()
+      +create_quartered_hemisphere()
+      +get_cap_edge_vertices()
+      +create_cap_edge_vertices()
+      +create_mantle_quads()
+    }
+  }
+  
+  namespace roundedbox {
+    class RoundedCornerBox {
+      +\_\_init\_\_()
+      +create_side_rect()
+      +create_rounded_corners()
+      +create_rect_corners()
+      +create_rect_sides()
+      +create_corners()
+      +define_variables()
+      +get_geom_node()
+    }
+
+    class RoundedEdgeBox {
+      +\_\_init\_\_()
+      +create_rect()
+      +create_rounded_corner()
+      +create_horizontal_rounded_edge()
+      +create_vertical_rounded_edge()
+      +create_rect_side()
+      +create_rect_edges()
+      +create_bottom()
+      +create_middle()
+      +create_top()
+      +define_variables()
+      +get_geom_node()
+    }
+
+    class CapsulePrism {
+      +create_rounded_corners()
+      +create_corners()
+      +define_variables()
+      +get_geom_node()
+    }
+  }
+
+  namespace sphere {
+    class BasicSphere{
+      +\_\_init\_\_()
+      +get_cap_triangle_vertices()
+      +get_cap_quad_vertices()
+      +get_cap_edge_vertices()
+      +create_cap_edge_vertices()
+      +create_cap_pole()
+      +create_bottom_cap_triangles()
+      +create_bottom_cap_quads()
+      +create_bottom_edge_quads()
+      +create_bottom_pole_triangles()
+      +define_bottom_cap()
+      +create_bottom()
+      +create_top_edge_quads()
+      +create_top_pole_triangles()
+      +create_top_cap_triangles()
+      +create_top_cap_quads()
+      +define_top_cap()
+      +create_top()
+      +create_mantle_quads()
+      +get_thickness_cap_vertices()
+      +get_cap_vertices()
+      +create_slice_cap()
+      +define_variables()
+      +get_geom_node()
+    }
+
+    class Sphere{
+      +get_geom_node()
+    }
+
+    class Ellipsoid {
+      +\_\_init\_\_()
+      +get_cap_axis()
+      +create_cap_edge_vertices()
+      +get_cap_quad_vertices()
+      +get_cap_triangle_vertices()
+      +get_cap_edge_vertices()
+      +create_bottom()
+      +create_top()
+      +create_mantle_quads()
+      +create_slice_cap()
+      +get_thickness_cap_vertices()
+      +get_cap_vertices()
+      +define_inner_details()
+      +define_variables()
+      +get_geom_node()
+    }
+  }
+
+  namespace spherical_polyhedron {
+    class SphericalPolyhedron {
+      <<abstract>>
+      +*generate_triangles*()
+      +\_\_init\_\_()
+      +calc_uv()
+      +fix_uv()
+      +generate_divided_tri()
+      +create_sphere()
+      +reate_sphere_geom_node()
+    }
+
+    class TriangleGenerator {
+      +calc_midpoints()
+      +subdivide()
+    }
+
+    class Icosphere {
+      +generate_triangles()
+      +get_geom_node()
+    }
+
+    class Cubesphere {
+      +generate_triangles()
+      +get_geom_node()
+    }
+  }
+
+  class Cone {
+    +\_\_init\_\_()
+    +create_bottom_cap_triangles()
+    +create_bottom_cap_quads()
+    +create_mantle_quads()
+    +create_top_cap_triangles()
+    +create_top_cap_quads()
+    +create_slice_cap()
+    +define_variables()
+    +get_geom_node()
+  }
+
+  class Torus {
+    +\_\_init\_\_()
+    +create_mantle()
+    +create_ring_cap()
+    +create_section_cap()
+    +get_geom_node()
+  }
+
+  class RightTriangularPrism {
+    +\_\_init\_\_()
+    +create_cap_triangles()
+    +create_cap_quad_vertices()
+    +create_bottom_cap_triangles()
+    +create_bottom_cap_quads()
+    +create_mantle_quads()
+    +create_top_cap_triangles()
+    +create_top_cap_quads()
+    +create_slice_cap_quads()
+    +calc_radius()
+    +define_variables()
+    +get_geom_node()
+  }
+
+  class Plane {
+    +\_\_init\_\_()
+    +get_geom_node()
+  }
+
+  class EllipticalPrism {
+    +\_\_init\_\_()
+    +create_cap_triangles()
+    +create_cap_quad_vertices()
+    +create_bottom_cap_triangles()
+    +create_bottom_cap_quads()
+    +create_mantle_quads()
+    +create_top_cap_triangles()
+    +create_top_cap_quads()
+    +create_slice_cap_quads()
+    +define_variables()
+    +get_geom_node()
+  }
+  
+  BasicCylinder <|-- Cylinder
+  _ProceduralGeometry_ <|-- Cylinder
+  BasicCylinder <|-- VerticalRoundedEdge
+  BasicCylinder <|-- HorizontalRoundedEdge
+  BasicCylinder <|-- RandomPolygonalPrism
+
+  BasicCylinder <|-- Capsule
+  _ProceduralGeometry_ <|-- Capsule
+
+  _ProceduralGeometry_ <|-- Box
+  BasicBox <|-- Box
+  BasicBox <|-- RoundedBox
+
+  _ProceduralGeometry_ <|-- CapsulePrism
+  RoundedBox <|-- CapsulePrism
+  RoundedBox ..> VerticalRoundedEdge : create and use
+  RoundedBox ..> HorizontalRoundedEdge : create and use
+  RoundedBox ..> QuarteredHemisphereCorner : create and use
+
+  _ProceduralGeometry_ <|-- RoundedEdgeBox
+  RoundedBox <|-- RoundedEdgeBox
+  _ProceduralGeometry_ <|-- RoundedCornerBox
+  RoundedBox <|-- RoundedCornerBox
+
+  _ProceduralGeometry_ <|-- Sphere
+  BasicSphere <|-- Sphere  
+  _ProceduralGeometry_ <|-- Ellipsoid
+  BasicSphere <|-- Ellipsoid
+  BasicSphere <|-- CapsuleHemisphere
+  
+  CapsuleHemisphere <-- QuarteredHemisphereCorner
+  Capsule ..> CapsuleHemisphere : create and use
+  _ProceduralGeometry_ <|-- SphericalPolyhedron
+  _ProceduralGeometry_ <|-- RandomPolygonalPrism
+  TriangleGenerator <|-- SphericalPolyhedron
+  SphericalPolyhedron <|-- Cubesphere
+  SphericalPolyhedron <|-- Icosphere
+
+  _ProceduralGeometry_ <|-- Torus
+  _ProceduralGeometry_ <|-- Cone
+  _ProceduralGeometry_ <|-- RightTriangularPrism
+  _ProceduralGeometry_ <|-- Plane
+  _ProceduralGeometry_ <|-- EllipticalPrism
+
+```

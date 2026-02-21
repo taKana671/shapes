@@ -5,11 +5,12 @@ from types import SimpleNamespace
 import numpy as np
 from panda3d.core import Vec3, Point3, Vec2
 
-from .cylinder import Cylinder
-from .sphere import Sphere
+from .create_geometry import ProceduralGeometry
+from .cylinder import BasicCylinder
+from .sphere import BasicSphere
 
 
-class Capsule(Cylinder):
+class Capsule(BasicCylinder, ProceduralGeometry):
     """A class to creates a capsule.
 
        Args:
@@ -153,11 +154,11 @@ class Capsule(Cylinder):
 
         # Create the capsule geom node.
         geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'capsule')
+            vertex_cnt, vdata_values, prim_indices, self.__class__.__name__.lower())
         return geom_node
 
 
-class CapsuleHemisphere(Sphere):
+class CapsuleHemisphere(BasicSphere):
 
     def __init__(self, center, radius=1., inner_radius=0, segs_h=40, segs_v=20,
                  segs_slice_caps=2, slice_deg=0, bottom_clip=-1., top_clip=1., invert=False):

@@ -8,7 +8,7 @@ from panda3d.core import Vec3, Point3, Vec2
 from .create_geometry import ProceduralGeometry
 
 
-class Sphere(ProceduralGeometry):
+class BasicSphere:
     """A class to create a sphere.
 
         Args:
@@ -38,7 +38,7 @@ class Sphere(ProceduralGeometry):
     def __init__(self, radius=1., inner_radius=0, segs_h=40, segs_v=40,
                  segs_bottom_cap=2, segs_top_cap=2, segs_slice_caps=2,
                  slice_deg=0, bottom_clip=-1., top_clip=1., invert=False):
-        super().__init__()
+        self.color = (1, 1, 1, 1)
         self.radius = radius
         self.inner_radius = inner_radius
         self.segs_h = segs_h
@@ -618,6 +618,9 @@ class Sphere(ProceduralGeometry):
         self.top_angle = math.acos(np.clip(self.top_height / self.radius, -1.0, 1.0))
         self.delta_angle_v = (math.pi - self.bottom_angle - self.top_angle) / self.segs_v
 
+
+class Sphere(BasicSphere, ProceduralGeometry):
+
     def get_geom_node(self):
         # Calculate required values to define variables.
         self.define_variables()
@@ -658,5 +661,5 @@ class Sphere(ProceduralGeometry):
 
         # Create the geom node.
         geom_node = self.create_geom_node(
-            vertex_cnt, vdata_values, prim_indices, 'sphere')
+            vertex_cnt, vdata_values, prim_indices, self.__class__.__name__.lower())
         return geom_node
