@@ -112,12 +112,18 @@ class RandomPolygonalPrism(BasicCylinder, ProceduralGeometry):
         for i in range(self.segs_a + 1):
             z = self.height * i / self.segs_a
             v = i / self.segs_a
+            total_edge_length = 0
 
             for j, shifted_vert in enumerate(self.shifted_vertices):
                 vertex = Point3(*shifted_vert[:2], z)
-
                 normal = Vec3(vertex.x, vertex.y, 0.0).normalized() * direction
-                u = j / self.segs_c
+
+                if j > 0:
+                    total_edge_length += self.edge_lengths[j - 1]
+
+                u = total_edge_length / self.edge_length
+
+                # u = j / self.segs_c
                 uv = Vec2(u, v)
 
                 vdata_values.extend([*vertex, *self.color, *normal, *uv])
@@ -125,8 +131,15 @@ class RandomPolygonalPrism(BasicCylinder, ProceduralGeometry):
 
         return vertex_cnt
 
+    def calc_perimeter(self):
+        edges = np.diff(self.vertices, axis=0, append=[self.vertices[0]])
+        edge_lengths = np.sqrt(np.sum(edges ** 2, axis=1))
+        edge_length = np.sum(edge_lengths)
+        return edge_length, edge_lengths
+
     def define_variables(self):
         self.shifted_vertices = [v - self.center for v in self.vertices + self.vertices[:1]]
+        self.edge_length, self.edge_lengths = self.calc_perimeter()
 
     def get_geom_node(self):
         self.define_variables()
