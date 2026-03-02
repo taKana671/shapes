@@ -1,10 +1,11 @@
 import array
 import math
 
+import numpy as np
 from panda3d.core import Vec3, Point3, Vec2
 
-from .create_geometry import ProceduralGeometry
-from .cylinder import BasicCylinder
+from ..create_geometry import ProceduralGeometry
+from ..cylinder import BasicCylinder
 
 
 class RandomPolygonalPrism(BasicCylinder, ProceduralGeometry):
@@ -27,6 +28,8 @@ class RandomPolygonalPrism(BasicCylinder, ProceduralGeometry):
         self.vertices = vertices
         segs_c = len(self.vertices)
         self.center = sum(self.vertices) / segs_c
+        # self.center = np.mean(vertices, axis=0)
+        # import pdb; pdb.set_trace()
         radius = math.hypot(*(self.vertices[0] - self.center))
         self.thickness = radius if not thickness else max(0, min(radius, thickness))
 
