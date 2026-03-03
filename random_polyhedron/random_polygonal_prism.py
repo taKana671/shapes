@@ -28,8 +28,6 @@ class RandomPolygonalPrism(BasicCylinder, ProceduralGeometry):
         self.vertices = vertices
         segs_c = len(self.vertices)
         self.center = sum(self.vertices) / segs_c
-        # self.center = np.mean(vertices, axis=0)
-        # import pdb; pdb.set_trace()
         radius = math.hypot(*(self.vertices[0] - self.center))
         self.thickness = radius if not thickness else max(0, min(radius, thickness))
 
@@ -45,6 +43,9 @@ class RandomPolygonalPrism(BasicCylinder, ProceduralGeometry):
             end_slice_cap=False,
             invert=invert
         )
+
+        self.shifted_vertices = [v - self.center for v in self.vertices + self.vertices[:1]]
+        self.edge_length, self.edge_lengths = self.calc_perimeter()
 
     def create_cap_triangles(self, vdata_values, bottom=True):
         normal = Vec3(0, 0, 1) if self.invert else Vec3(0, 0, -1)
@@ -122,8 +123,6 @@ class RandomPolygonalPrism(BasicCylinder, ProceduralGeometry):
                     total_edge_length += self.edge_lengths[j - 1]
 
                 u = total_edge_length / self.edge_length
-
-                # u = j / self.segs_c
                 uv = Vec2(u, v)
 
                 vdata_values.extend([*vertex, *self.color, *normal, *uv])
@@ -137,13 +136,7 @@ class RandomPolygonalPrism(BasicCylinder, ProceduralGeometry):
         edge_length = np.sum(edge_lengths)
         return edge_length, edge_lengths
 
-    def define_variables(self):
-        self.shifted_vertices = [v - self.center for v in self.vertices + self.vertices[:1]]
-        self.edge_length, self.edge_lengths = self.calc_perimeter()
-
     def get_geom_node(self):
-        self.define_variables()
-
         # Create an outer cylinder.
         vdata_values = array.array('f', [])
         prim_indices = array.array('H', [])
