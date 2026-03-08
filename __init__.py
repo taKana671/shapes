@@ -10,4 +10,4 @@ from .capsule import Capsule
 from .rounded_box import CapsulePrism, RoundedCornerBox, RoundedEdgeBox
 from .ellipsoid import Ellipsoid
 from .spherical_polyhedron import Icosphere, Cubesphere
-from .random_polygonal_prism import RandomPolygonalPrism
+from .random_polyhedron import RandomPolygonalPrism
