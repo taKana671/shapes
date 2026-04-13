@@ -2,10 +2,13 @@ import array
 import math
 
 import numpy as np
-from panda3d.core import Vec3, Point3, Vec2
+from panda3d.core import Vec3, Point3, Vec2, Point2
 
 from ..create_geometry import ProceduralGeometry
 from ..cylinder import BasicCylinder
+from ..spherical_polyhedron import TriangleGenerator, SphericalPolyhedron
+
+from scipy.optimize import minimize
 
 
 polyhedron_faces = [
@@ -128,17 +131,19 @@ polyhedron_faces2 = [
 
 class RandomConvexPolygon:
 
-    def __init__(self, vertices, thickness=0., segs_radius=10, segs_a=2, invert=False, open=False):
+    def __init__(self, vertices, thickness=0., segs_radius=10, segs_a=2, invert=False):
         self.color = (1, 1, 1, 1)
         self.vertices = vertices
         self.segs_a = segs_a
-        self.open = open
 
         self.segs_radius = segs_radius
         self.invert = invert
         self.segs_c = len(self.vertices)
 
         self.center = np.mean(self.vertices, axis=0)
+        # result = minimize(self.cost_function, self.center, args=(vertices,))
+
+
         # self.center = sum(self.vertices) / self.segs_c
         self.radius = math.hypot(*(self.vertices[0] - self.center))
         self.thickness = self.radius if not thickness else max(0, min(self.radius, thickness))
@@ -147,12 +152,20 @@ class RandomConvexPolygon:
         # self.normal = self.calc_normal_newell()
         # self.normal = self.calc_normal_cross()
         self.normal = self.calc_average_normal()
-
+        
         self.inner_radius = self.radius - self.thickness
         self.height = self.thickness
-
+        # print(self.thickness, self.inner_radius, self.radius)
         self.edge_length, self.edge_lengths = self.calc_perimeter()
 
+    
+    def cost_function(self, p):
+        distance = [np.linalg(p - v) for v in self.vertices]
+        return np.std(distance)
+    
+    
+    
+    
     def calc_perimeter(self):
         edges = np.diff(self.vertices, axis=0, append=[self.vertices[0]])
         edge_lengths = np.sqrt(np.sum(edges ** 2, axis=1))
@@ -213,7 +226,7 @@ class RandomConvexPolygon:
             avg_normal = -avg_normal
 
         return avg_normal / norm
-
+    
     def create_triangles(self, vdata_values):
         direction = -1 if self.invert else 1
         r = self.radius / self.segs_radius
@@ -231,10 +244,7 @@ class RandomConvexPolygon:
             vertex = Point3(*((shifted_vert - self.center) / self.segs_radius + self.center))
             u = 0.5 + vertex.x / r * 0.5 / self.segs_radius
             v = 0.5 + vertex.y / r * 0.5 * direction / self.segs_radius
-
-            # normal = self.normalize(vertex)
-            # vdata_values.extend([*vertex, *self.color, *normal, *(u, v)])
-
+    
             vdata_values.extend([*vertex, *self.color, *self.normal, *(u, v)])
             vertex_cnt += 1
 
@@ -262,14 +272,10 @@ class RandomConvexPolygon:
 
                 pt = (shifted_vert - self.center) * _r + self.center
                 vertex = Point3(*pt)
-                # vertex = Point3(*shifted_vert * _r)
+ 
                 u = 0.5 + vertex.x / r * 0.5 * _r
-                # _direction = -direction if bottom else direction
-                # v = 0.5 + vertex.y / r * 0.5 * _direction * _r
                 v = 0.5 + vertex.y / r * 0.5 * direction * _r
 
-                # normal = self.normalize(vertex)
-                # vdata_values.extend([*vertex, *self.color, *normal, *(u, v)])
                 vdata_values.extend([*vertex, *self.color, *self.normal, *(u, v)])
                 vertex_cnt += 1
 
@@ -341,8 +347,7 @@ class RandomConvexPolygon:
             for j, shifted_vert in enumerate(self.shifted_vertices):
                 # pt = shifted_vert - (shifted_vert - self.center) * (z / self.radius)
                 pt = (shifted_vert - shifted_vert * (self.inner_radius / self.radius)) * (i / self.segs_a)
-                pt = shifted_vert * (self.inner_radius / 
-                                     self.radius) + pt 
+                pt = shifted_vert * (self.inner_radius / self.radius) + pt
                 vertex = Point3(*pt)
                 # vertex = Point3(*shifted_vert[:2], z)
                 normal = Vec3(vertex.x, vertex.y, 0.0).normalized() * direction
@@ -378,7 +383,7 @@ class RandomConvexPolygon:
         return vertex_cnt
 
 
-class RandomConvexPolyhedron(ProceduralGeometry):
+class RandomConvexPolyhedron2(ProceduralGeometry):
     """A class to create a prism from 3D vertex coordinates of a polygonal base with height 0.
 
         Args:
@@ -394,25 +399,28 @@ class RandomConvexPolyhedron(ProceduralGeometry):
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 
-    def __init__(self, vertices=polyhedron_faces2, thickness=0.0, height=1, segs_a=1, segs_radius=10, invert=False, open=False):
+    def __init__(self, vertices=polyhedron_faces2, thickness=0.0, height=1, segs_a=1, segs_radius=10,
+                 invert=False, has_inner=True):
         self.polyhedron_faces = vertices
         self.segs_radius = segs_radius
         self.invert = invert
         self.thickness = thickness
         self.height = height
         self.segs_a = segs_a
-        self.open = open
+        self.has_inner = has_inner
 
     def create_polyhedron(self, vertex_cnt, vdata_values, prim_indices):
-        poly_center = np.mean(np.concatenate(self.polyhedron_faces), axis=0)
+        combined = np.concatenate(self.polyhedron_faces)
+        poly_center = np.mean(combined, axis=0)
+        self.radius = math.hypot(*(combined[0] - poly_center))
+
         self.polygons = []
 
         # for face in self.polyhedron_faces[4:5]:
         for face in self.polyhedron_faces:
             vertices = face - poly_center
             polygon = RandomConvexPolygon(
-                vertices, thickness=self.thickness, segs_radius=self.segs_radius,
-                invert=self.invert, open=self.open)
+                vertices, thickness=self.thickness, segs_radius=self.segs_radius, invert=self.invert)
             vertex_cnt += polygon.create_polygon(vertex_cnt, vdata_values, prim_indices)
             self.polygons.append(polygon)
 
@@ -427,17 +435,18 @@ class RandomConvexPolyhedron(ProceduralGeometry):
 
         # vertex_cnt = self.create_cylinder(vertex_cnt, vdata_values, prim_indices)
 
-        if self.thickness:
+        # if self.thickness:
+        if self.has_inner:
             # import pdb; pdb.set_trace()
+            ratio = (self.radius - self.thickness) / self.radius
             cylinder_maker = RandomConvexPolyhedron(
-                # vertices=[f * (v.inner_radius / v.radius) for v, f in zip(self.polygons, self.polyhedron_faces)],
-                vertices=[f * 0.8 for v, f in zip(self.polygons, self.polyhedron_faces)],
-                thickness=0,
+                vertices=[v * ratio for v in self.polyhedron_faces],
+                thickness=self.thickness * ratio,
                 height=self.height,
                 segs_a=self.segs_a,
-                segs_radius=2,
+                segs_radius=3,
                 invert=not self.invert,
-                open=True
+                has_inner=False
             )
 
             geom_node = cylinder_maker.get_geom_node()
@@ -448,3 +457,190 @@ class RandomConvexPolyhedron(ProceduralGeometry):
         geom_node = self.create_geom_node(
             vertex_cnt, vdata_values, prim_indices, self.__class__.__name__.lower())
         return geom_node
+
+
+
+class RandomConvexPolyhedron(SphericalPolyhedron):
+    """A class to create a prism from 3D vertex coordinates of a polygonal base with height 0.
+
+        Args:
+            vertices: (list): a list of numpy.ndarray of double; coordinates of the Voronoi vertices.
+            thickness (float):
+                radial offset of inner cylinder;
+                results in a straight tube with an inner radius equal to radius minus thickness;
+                must be in [0., radius] range; default is 0.0.
+            height (float): length of the cylinder, greater than 0; default is 1.
+            segs_a (int): subdivisions of the mantle along the axis of rotation; minimum is 1; default is 2.
+            segs_top_cap (int): radial subdivisions of the top cap; minimum = 0; default is 3.
+            segs_bottom_cap (int): radial subdivisions of the bottom cap; minimum = 0; default is 3.
+            invert (bool): whether or not the geometry should be rendered inside-out; default is False.
+    """
+
+    def __init__(self, vertices=polyhedron_faces, thickness=0.0, height=1, segs_a=1, segs_radius=10,
+                 invert=False, has_inner=True):
+        self.polyhedron_faces = vertices
+        self.segs_radius = segs_radius
+        self.invert = invert
+        self.thickness = thickness
+        self.height = height
+        self.segs_a = segs_a
+        self.has_inner = has_inner
+        super().__init__(3, 1)
+
+    # def create_polyhedron(self, vertex_cnt, vdata_values, prim_indices):
+    #     combined = np.concatenate(self.polyhedron_faces)
+    #     poly_center = np.mean(combined, axis=0)
+    #     self.radius = math.hypot(*(combined[0] - poly_center))
+
+    #     self.polygons = []
+
+    #     # for face in self.polyhedron_faces[4:5]:
+    #     for face in self.polyhedron_faces:
+    #         vertices = face - poly_center
+    #         polygon = RandomConvexPolygon(
+    #             vertices, thickness=self.thickness, segs_radius=self.segs_radius, invert=self.invert)
+    #         vertex_cnt += polygon.create_polygon(vertex_cnt, vdata_values, prim_indices)
+    #         self.polygons.append(polygon)
+
+    #     return vertex_cnt
+
+    
+    def calc_average_normal(self, vertices):
+        normals = []
+        v0 = vertices[0]
+
+        for i in range(1, len(vertices) - 1):
+            v1 = vertices[i]
+            v2 = vertices[i + 1]
+            normal = np.cross(v1 - v0, v2 - v0)
+            normals.append(normal)
+
+        normals = np.array(normals)
+        avg_normal = np.mean(normals, axis=0)
+
+        if (norm := math.hypot(*avg_normal)) == 0:
+            return avg_normal
+
+        if np.dot(avg_normal, v0) < 0:
+            avg_normal = -avg_normal
+
+        return avg_normal / norm
+    
+    
+    def generate_triangles(self):
+        combined = np.concatenate(self.polyhedron_faces)
+        poly_center = np.mean(combined, axis=0)
+        self.radius = math.hypot(*(combined[0] - poly_center))
+
+        for vertices in self.polyhedron_faces:
+            shifted_vertices = vertices - poly_center
+            center = np.mean(shifted_vertices, axis=0)
+            self.normal = self.calc_average_normal(shifted_vertices)
+
+            for i, v in enumerate(shifted_vertices):
+                next_v = shifted_vertices[(i + 1) % len(shifted_vertices)]
+                # import pdb; pdb.set_trace()
+                # tri = [Point3(*center), Point3(*v), Point3(*next_v)]
+                tri = [center, v, next_v]
+                yield tri
+
+    def generate_divided_tri(self):
+        for tri in self.generate_triangles():
+            for divided_tri in self.subdivide(tri, self.max_depth):
+                yield divided_tri
+
+    def project_to_uv(self, vertices, normal):
+        vertices = np.array(vertices)
+
+        vec = np.array([1, 0, 0]) if abs(normal[0]) < 0.9 else np.array([0, 1, 0])
+        tangent = np.cross(normal, vec)
+        tangent /= math.hypot(*tangent)
+        bitangent = np.cross(normal, tangent)
+        u = np.dot(vertices, tangent)
+        v = np.dot(vertices, bitangent)
+        return u, v
+
+    def create_polyhedron(self, vdata_values, prim_indices):
+        """Subdivide a triangle and normalize the vertex position vectors.
+        """
+        vertex_cnt = 0
+
+        for i, tri in enumerate(self.generate_divided_tri()):
+            # import pdb; pdb.set_trace()
+            # uvs = [self.calc_uv(vert.normalized()) for vert in tri]
+            # uvs = self.calc_planar_uv(tri)
+            uvs = [self.project_to_uv(v, self.normal) for v in tri]
+            # self.fix_uv(*uvs)
+
+            for vert, uv in zip(tri, uvs):
+                vertex = vert * self.scale
+
+                vdata_values.extend(vertex)               # vertex
+                vdata_values.extend(self.color)           # color
+                vdata_values.extend(self.normal)               # normal
+                vdata_values.extend(uv)                   # uv
+                vertex_cnt += 1
+
+            indices = (idx := i * 3, idx + 1, idx + 2)
+            prim_indices.extend(indices)
+        
+        return vertex_cnt
+
+    def get_geom_node(self):
+        # faces = sum(1 if len(face) == 3 else len(face) for face in self.polyhedron_faces)
+        # vertex_cnt = 4 ** self.max_depth * faces
+        # type_code = 'H' if vertex_cnt <= 65535 else 'I'
+        vdata_values = array.array('f', [])
+        # prim_indices = array.array(type_code, [])
+        prim_indices = array.array('I', [])
+
+        vertex_cnt = self.create_polyhedron(vdata_values, prim_indices)
+
+        geom_node = self.create_geom_node(
+            vertex_cnt,
+            vdata_values,
+            prim_indices,
+            self.__class__.__name__.lower()
+        )
+
+        return geom_node
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    # def get_geom_node(self):
+    #     # Create an outer cylinder.
+    #     vdata_values = array.array('f', [])
+    #     prim_indices = array.array('H', [])
+    #     vertex_cnt = 0
+    #     vertex_cnt = self.create_polyhedron(vertex_cnt, vdata_values, prim_indices)
+
+    #     # vertex_cnt = self.create_cylinder(vertex_cnt, vdata_values, prim_indices)
+
+    #     # if self.thickness:
+    #     if self.has_inner:
+    #         # import pdb; pdb.set_trace()
+    #         ratio = (self.radius - self.thickness) / self.radius
+    #         cylinder_maker = RandomConvexPolyhedron(
+    #             vertices=[v * ratio for v in self.polyhedron_faces],
+    #             thickness=self.thickness * ratio,
+    #             height=self.height,
+    #             segs_a=self.segs_a,
+    #             segs_radius=3,
+    #             invert=not self.invert,
+    #             has_inner=False
+    #         )
+
+    #         geom_node = cylinder_maker.get_geom_node()
+    #         self.add(geom_node, vdata_values, vertex_cnt, prim_indices)
+    #         return geom_node
+
+    #     # Create the geom node.
+    #     geom_node = self.create_geom_node(
+    #         vertex_cnt, vdata_values, prim_indices, self.__class__.__name__.lower())
+    #     return geom_node
