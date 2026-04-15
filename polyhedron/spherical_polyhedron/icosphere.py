@@ -41,4 +41,4 @@ class Icosphere(SphericalPolyhedron):
 
     def get_geom_node(self):
         faces = 20
-        return self.create_sphere_geom_node(faces)
+        return self.create_polyhedron_geom_node(faces)

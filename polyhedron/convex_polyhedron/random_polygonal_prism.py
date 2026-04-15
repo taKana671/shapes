@@ -4,8 +4,8 @@ import math
 import numpy as np
 from panda3d.core import Vec3, Point3, Vec2
 
-from ..create_geometry import ProceduralGeometry
-from ..cylinder import BasicCylinder
+from ...create_geometry import ProceduralGeometry
+from ...cylinder import BasicCylinder
 
 
 class RandomPolygonalPrism(BasicCylinder, ProceduralGeometry):
