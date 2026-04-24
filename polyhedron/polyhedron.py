@@ -32,7 +32,7 @@ class Polyhedron(TriangleGenerator, ProceduralGeometry):
     """An abstract base class for generating 3D polyhedron
         rgs:
             max_depth (int): the number of divisions of one triangle; cannot be negative.
-            scale (float): the size of sphere; greater than 0.
+            scale (float): the scale of the polyhedron; greater than 0.
     """
 
     def __init__(self, max_depth=4, scale=2):

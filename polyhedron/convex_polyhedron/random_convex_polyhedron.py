@@ -7,20 +7,20 @@ class RandomConvexPolyhedron(ConvexPolyhedron):
     """A class to create a random convex polyhedron.
 
         Args:
-            polygons (list): A list of numpy.ndarray
+            polygons (list): A list of numpy.ndarray; vertex coordinates of a polyhedron.
             max_depth (int): the number of divisions of one triangle; cannot be negative.
-            scale (float): the size of sphere; greater than 0.
+            scale (float): the scale of the polyhedron; greater than 0.
     """
 
     def __init__(self, polygons, max_depth=4, scale=2.):
         super().__init__(max_depth, scale)
         self.polygons = polygons
         self.normal = np.zeros(3)
-        self.polyhedron_center = np.mean(np.concatenate(self.polygons), axis=0)
+        self.polyhedron_org_center = np.mean(np.concatenate(self.polygons), axis=0)
 
     def generate_triangles(self):
         for vertices in self.polygons:
-            shifted_vertices = vertices - self.polyhedron_center
+            shifted_vertices = vertices - self.polyhedron_org_center
             center = np.mean(shifted_vertices, axis=0)
             self.normal = self.calc_average_normal(shifted_vertices)
 

@@ -7,9 +7,6 @@ from ..polyhedron import Polyhedron
 
 class ConvexPolyhedron(Polyhedron):
     """A class that provides common methods for generating 3D convex polyhedron.
-        Args:
-            max_depth (int): the number of divisions of one triangle; cannot be negative.
-            scale (float): the size of polyhedron; greater than 0.
     """
 
     def calc_normal_newell(self, vertices):
@@ -49,8 +46,11 @@ class ConvexPolyhedron(Polyhedron):
         normals = np.array(normals)
         avg_normal = np.mean(normals, axis=0)
 
-        if (norm := math.hypot(*avg_normal)) == 0:
-            return avg_normal
+        try:
+            if (norm := math.hypot(*avg_normal)) == 0:
+                return avg_normal
+        except TypeError:
+            import pdb; pdb.set_trace()
 
         if np.dot(avg_normal, v0) < 0:
             avg_normal = -avg_normal
