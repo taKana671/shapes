@@ -46,4 +46,4 @@ class Cubesphere(SphericalPolyhedron):
 
     def get_geom_node(self):
         faces = 6 * 4
-        return self.create_sphere_geom_node(faces)
+        return self.create_polyhedron_geom_node(faces)

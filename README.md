@@ -83,17 +83,6 @@ classDiagram
     class Cylinder{
       +get_geom_node()
     }
-
-    class RandomPolygonalPrism{
-      +\_\_init\_\_()
-      +create_cap_triangles()
-      +create_cap_quad_vertices()
-      +create_mantle_quad_vertices()
-      +calc_delta_rad()
-      +generage_delta_rad()
-      +define_variables()
-      +get_geom_node()
-    }
   }
 
   namespace capsule {
@@ -259,34 +248,6 @@ classDiagram
     }
   }
 
-  namespace spherical_polyhedron {
-    class SphericalPolyhedron {
-      <<abstract>>
-      +*generate_triangles*()
-      +\_\_init\_\_()
-      +calc_uv()
-      +fix_uv()
-      +generate_divided_tri()
-      +create_sphere()
-      +reate_sphere_geom_node()
-    }
-
-    class TriangleGenerator {
-      +calc_midpoints()
-      +subdivide()
-    }
-
-    class Icosphere {
-      +generate_triangles()
-      +get_geom_node()
-    }
-
-    class Cubesphere {
-      +generate_triangles()
-      +get_geom_node()
-    }
-  }
-
   class Cone {
     +\_\_init\_\_()
     +create_bottom_cap_triangles()
@@ -340,12 +301,86 @@ classDiagram
     +define_variables()
     +get_geom_node()
   }
+
+  namespace polyhedron {
+    class TriangleGenerator {
+      +calc_midpoints()
+      +subdivide()
+    }
+    
+    class Polyhedron {
+      <<abstract>>
+      +*generate_triangles*()
+      +*create_polyhedron*()
+      +\_\_init\_\_()
+      +generate_divided_tri()
+      +create_polyhedron_geom_node()
+    }
+    
+    class SphericalPolyhedron {
+      +calc_uv()
+      +fix_uv()
+      +create_polyhedron()
+    }
+
+    class Icosphere {
+      +generate_triangles()
+      +get_geom_node()
+    }
+
+    class Cubesphere {
+      +generate_triangles()
+      +get_geom_node()
+    }
+
+    class ConvexPolyhedron {
+      +calc_normal_newell()
+      +calc_average_normal()
+      +project_to_uv()
+      +create_polyhedron()
+    }
+
+    class RandomConvexPolyhedron {
+      +\_\_init\_\_()
+      +generate_triangles()
+      +get_geom_node()
+    }
+
+    class Dodecahedron {
+      +generate_triangles()
+      +get_geom_node()
+    }
+
+    class RandomPolygonalPrism {
+      +\_\_init\_\_()
+      +create_cap_triangles()
+      +create_cap_quad_vertices()
+      +create_mantle_quad_vertices()
+      +calc_delta_rad()
+      +generage_delta_rad()
+      +define_variables()
+      +get_geom_node()
+    }
+  }
   
+  _ProceduralGeometry_ <|-- Polyhedron
+  TriangleGenerator <|-- Polyhedron
+
+  Polyhedron <|-- SphericalPolyhedron
+  SphericalPolyhedron <|-- Cubesphere
+  SphericalPolyhedron <|-- Icosphere
+
+  Polyhedron <|-- ConvexPolyhedron
+  ConvexPolyhedron <|-- RandomConvexPolyhedron
+  ConvexPolyhedron <|-- Dodecahedron
+
+  _ProceduralGeometry_ <|-- RandomPolygonalPrism
+  BasicCylinder <|-- RandomPolygonalPrism
+
   BasicCylinder <|-- Cylinder
   _ProceduralGeometry_ <|-- Cylinder
   BasicCylinder <|-- VerticalRoundedEdge
   BasicCylinder <|-- HorizontalRoundedEdge
-  BasicCylinder <|-- RandomPolygonalPrism
 
   BasicCylinder <|-- Capsule
   _ProceduralGeometry_ <|-- Capsule
@@ -373,11 +408,6 @@ classDiagram
   
   CapsuleHemisphere <-- QuarteredHemisphereCorner
   Capsule ..> CapsuleHemisphere : create and use
-  _ProceduralGeometry_ <|-- SphericalPolyhedron
-  _ProceduralGeometry_ <|-- RandomPolygonalPrism
-  TriangleGenerator <|-- SphericalPolyhedron
-  SphericalPolyhedron <|-- Cubesphere
-  SphericalPolyhedron <|-- Icosphere
 
   _ProceduralGeometry_ <|-- Torus
   _ProceduralGeometry_ <|-- Cone

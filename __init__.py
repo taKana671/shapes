@@ -9,5 +9,5 @@ from .elliptical_prism import EllipticalPrism
 from .capsule import Capsule
 from .rounded_box import CapsulePrism, RoundedCornerBox, RoundedEdgeBox
 from .ellipsoid import Ellipsoid
-from .spherical_polyhedron import Icosphere, Cubesphere
-from .random_polyhedron import RandomPolygonalPrism
+from .polyhedron import Icosphere, Cubesphere
+from .polyhedron import RandomPolygonalPrism, RandomConvexPolyhedron

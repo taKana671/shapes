@@ -1,1 +1,0 @@
-from .random_polygonal_prism import RandomPolygonalPrism
