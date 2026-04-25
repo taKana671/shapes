@@ -46,11 +46,8 @@ class ConvexPolyhedron(Polyhedron):
         normals = np.array(normals)
         avg_normal = np.mean(normals, axis=0)
 
-        try:
-            if (norm := math.hypot(*avg_normal)) == 0:
-                return avg_normal
-        except TypeError:
-            import pdb; pdb.set_trace()
+        if (norm := math.hypot(*avg_normal)) == 0:
+            return avg_normal
 
         if np.dot(avg_normal, v0) < 0:
             avg_normal = -avg_normal
