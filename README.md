@@ -304,6 +304,7 @@ classDiagram
 
   namespace polyhedron {
     class TriangleGenerator {
+      <<mixin>>
       +calc_midpoints()
       +subdivide()
     }
@@ -318,6 +319,7 @@ classDiagram
     }
     
     class SphericalPolyhedron {
+      <<abstract mixin>>
       +calc_uv()
       +fix_uv()
       +create_polyhedron()
@@ -334,6 +336,7 @@ classDiagram
     }
 
     class ConvexPolyhedron {
+      <<abstract mixin>>
       +calc_normal_newell()
       +calc_average_normal()
       +project_to_uv()
