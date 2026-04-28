@@ -36,24 +36,25 @@ class Capsule(BasicCylinder, ProceduralGeometry):
 
     def __init__(self, radius=1., inner_radius=0., height=1., segs_c=40, segs_a=2, ring_slice_deg=0, slice_caps_radial=2,
                  slice_caps_axial=2, top_hemisphere=True, bottom_hemisphere=True, invert=False):
-        segs_cap = 2 if radius - inner_radius <= 4 else int(radius / 2)
+        self.radius = radius
+        self.inner_radius = inner_radius
+        self.height = height
+        self.segs_c = segs_c
+        self.segs_a = segs_a
 
-        super().__init__(
-            radius=radius,
-            inner_radius=inner_radius,
-            height=height,
-            segs_c=segs_c,
-            segs_a=segs_a,
-            segs_top_cap=0 if top_hemisphere else segs_cap,
-            segs_bottom_cap=0 if bottom_hemisphere else segs_cap,
-            ring_slice_deg=ring_slice_deg,
-            slice_caps_radial=slice_caps_radial,
-            slice_caps_axial=slice_caps_axial,
-            invert=invert
-        )
+        segs_cap = 2 if radius - inner_radius <= 4 else int(radius / 2)
+        self.segs_tc = 0 if top_hemisphere else segs_cap
+        self.segs_bc = 0 if bottom_hemisphere else segs_cap
+        self.ring_slice_deg = ring_slice_deg
+        self.segs_sc_r = slice_caps_radial
+        self.segs_sc_a = slice_caps_axial
+        self.invert = invert
 
         self.top_hemisphere = top_hemisphere
         self.bottom_hemisphere = bottom_hemisphere
+
+        self.color = (1, 1, 1, 1)
+        self.slice_caps = [True, False]
 
     def create_hemisphere(self, vertex_cnt, vdata_values, prim_indices,
                           center, bottom_clip=-1, top_clip=1):
@@ -103,17 +104,6 @@ class Capsule(BasicCylinder, ProceduralGeometry):
             vertex_cnt = self.create_hemisphere(
                 vertex_cnt, vdata_values, prim_indices, center, bottom_clip=0
             )
-
-        return vertex_cnt
-
-    def create_slice_caps(self, vertex_cnt, vdata_values, prim_indices):
-        if self.bottom_hemisphere:
-            vertex_cnt += self.b_hemi.create_slice_cap(vertex_cnt, vdata_values, prim_indices)
-
-        vertex_cnt += self.create_slice_cap_quads(vertex_cnt, vdata_values, prim_indices)
-
-        if self.top_hemisphere:
-            vertex_cnt += self.t_hemi.create_slice_cap(vertex_cnt, vdata_values, prim_indices)
 
         return vertex_cnt
 

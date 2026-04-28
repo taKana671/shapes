@@ -5,6 +5,7 @@ from panda3d.core import Vec3, Point3, Vec2
 
 from ..box import BasicBox
 from ..cylinder import BasicCylinder
+from ..cylinder import CylinderPrimitives
 from ..capsule import CapsuleHemisphere
 
 
@@ -49,7 +50,7 @@ class BasicRoundedBox(BasicBox):
                 else:
                     vertex_cnt += self.create_side(
                         vertex_cnt, vdata_values, prim_indices, direction, is_front,
-                        vertex, normal, name, index, offset, segments)
+                        vertex, normal, index, offset, segments)
 
         return vertex_cnt
 
@@ -121,7 +122,8 @@ class BasicRoundedBox(BasicBox):
         return vertex_cnt
 
 
-class VerticalRoundedEdge(BasicCylinder):
+# class VerticalRoundedEdge(BasicCylinder):
+class VerticalRoundedEdge(CylinderPrimitives):
     """A class to create a vertical cylinder on box edge.
 
        Args:
@@ -138,25 +140,32 @@ class VerticalRoundedEdge(BasicCylinder):
             invert (bool): whether or not the geometry should be rendered inside-out; default is False.
     """
 
-    def __init__(self, center, start_angle_deg, radius=1., inner_radius=0., height=1.,
-                 segs_c=40, segs_a=2, segs_top_cap=3, segs_bottom_cap=3, ring_slice_deg=0, invert=False):
-        super().__init__(
-            radius=radius,
-            inner_radius=inner_radius,
-            height=height,
-            segs_c=segs_c,
-            segs_a=segs_a,
-            segs_top_cap=segs_top_cap,
-            segs_bottom_cap=segs_bottom_cap,
-            ring_slice_deg=ring_slice_deg,
-            slice_caps_radial=0,
-            slice_caps_axial=0,
-            invert=invert
-        )
+    def __init__(self, center, start_angle_deg, radius=1., inner_radius=0., height=1., segs_c=40,
+                 segs_a=2, segs_top_cap=3, segs_bottom_cap=3, ring_slice_deg=0, invert=False):
+        # super().__init__(
+        self.color = (1, 1, 1, 1)
+        self.radius = radius
+        self.inner_radius = inner_radius
+        self.height = height
+        self.segs_c = segs_c
+        self.segs_a = segs_a
+        self.segs_tc = segs_top_cap
+        self.segs_bc = segs_bottom_cap
+        self.ring_slice_deg = ring_slice_deg
+        # slice_caps_radial=0,
+        # slice_caps_axial=0,
+        self.invert = invert
+        # )
         self.center = center
         self.start_angle_deg = start_angle_deg
-        self.start_angle_rad = math.pi * self.start_angle_deg / 180
+
         self.define_variables()
+
+    def define_variables(self):
+        self.start_angle_rad = math.pi * self.start_angle_deg / 180
+        self.thickness = self.radius - self.inner_radius
+        self.slice_rad = math.pi * self.ring_slice_deg / 180
+        self.delta_rad = math.pi * ((360 - self.ring_slice_deg) / 180) / self.segs_c
 
     def create_cap_triangles(self, vdata_values, bottom=True):
         normal = Vec3(0, 0, 1) if self.invert else Vec3(0, 0, -1)
@@ -224,7 +233,7 @@ class VerticalRoundedEdge(BasicCylinder):
 
         return vertex_cnt
 
-    def create_mantle_quad_vertices(self, index_offset, vdata_values, prim_indices):
+    def create_mantle_quad_vertices(self, vdata_values):
         direction = -1 if self.invert else 1
         vertex_cnt = 0
 
@@ -274,21 +283,22 @@ class HorizontalRoundedEdge(BasicCylinder):
     def __init__(self, center, start_angle_deg, radius=1., inner_radius=0., height=1.,
                  segs_c=40, segs_a=2, segs_top_cap=3, segs_bottom_cap=3, ring_slice_deg=0,
                  start_slice_cap=False, end_slice_cap=False, invert=False, x_axis=True):
-        super().__init__(
-            radius=radius,
-            inner_radius=inner_radius,
-            height=height,
-            segs_c=segs_c,
-            segs_a=segs_a,
-            segs_top_cap=segs_top_cap,
-            segs_bottom_cap=segs_bottom_cap,
-            slice_caps_radial=2,
-            slice_caps_axial=segs_a,
-            ring_slice_deg=ring_slice_deg,
-            start_slice_cap=start_slice_cap,
-            end_slice_cap=end_slice_cap,
-            invert=invert
-        )
+        # super().__init__(
+        self.color = (1, 1, 1, 1)
+        self.radius = radius
+        self.inner_radius = inner_radius
+        self.height = height
+        self.segs_c = segs_c
+        self.segs_a = segs_a
+        self.segs_tc = segs_top_cap
+        self.segs_bc = segs_bottom_cap
+        self.segs_sc_r = segs_a
+        self.segs_sc_a = segs_a
+        self.ring_slice_deg = ring_slice_deg
+        self.start_slice_cap = start_slice_cap
+        self.end_slice_cap = end_slice_cap
+        self.invert = invert
+        # )
         # If True, tilt a vertical cylinder, whose bottom center is the point (0, 0, 0),
         # 90 degrees in the x-axis direction, and if not, 90 degrees in the y-axis direction.
         self.x_axis = x_axis
@@ -297,8 +307,16 @@ class HorizontalRoundedEdge(BasicCylinder):
         self.define_variables()
 
     def define_variables(self):
-        self.start_angle_rad = math.pi * self.start_angle_deg / 180
         super().define_variables()
+        self.start_angle_rad = math.pi * self.start_angle_deg / 180
+
+        self.slice_caps = []
+
+        if self.start_slice_cap:
+            self.slice_caps.append(True)
+
+        if self.end_slice_cap:
+            self.slice_caps.append(False)
 
     def get_cap_normal(self):
         if self.x_axis:
@@ -388,7 +406,7 @@ class HorizontalRoundedEdge(BasicCylinder):
 
         return vertex_cnt
 
-    def create_mantle_quad_vertices(self, index_offset, vdata_values, prim_indices):
+    def create_mantle_quad_vertices(self, vdata_values):
         direction = -1 if self.invert else 1
         vertex_cnt = 0
 
@@ -430,7 +448,7 @@ class HorizontalRoundedEdge(BasicCylinder):
         delta_rad = math.pi * ((360 - deg) / 180) / self.segs_c
         return delta_rad
 
-    def create_slice_cap_quad_vertices(self, index_offset, vdata_values, prim_indices, is_start):
+    def create_slice_cap_quad_vertices(self, vdata_values, is_start):
         vertex_cnt = 0
         direction = -1 if self.invert else 1
 
