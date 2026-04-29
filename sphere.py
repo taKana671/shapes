@@ -8,7 +8,212 @@ from panda3d.core import Vec3, Point3, Vec2
 from .create_geometry import ProceduralGeometry
 
 
-class BasicSphere:
+class SphereGeometry:
+    """A mixin class that provides functionality for creating sphere vertex data and primitives.
+    """
+
+    def create_cap_pole(self, vdata_values, cap):
+        """Helper method to define the pole triangle vertices of a bottom or top.
+        """
+        normal = cap.normal * -1 if self.invert else cap.normal
+        v = 0 if cap.is_bottom else 1
+
+        # Define the pole triangle vertices.
+        for i in range(self.segs_h):
+            uv = Vec2(i / self.segs_h, v)
+            vdata_values.extend([*cap.pole_vertex, *self.color, *normal, *uv])
+
+        return self.segs_h
+
+    def create_bottom_edge_quads(self, index_offset, vdata_values, prim_indices):
+        """Define the vertices and their order along a bottom cap.
+        """
+        # Define the vertices along the bottom cap.
+        vertex_cnt = self.get_cap_edge_vertices(vdata_values)
+
+        # Define the vertex order of the polygon along the bottom pole or cap.
+        for i in range(self.segs_h):
+            vi1 = i + index_offset
+            vi2 = vi1 + 1
+            vi3 = vi2 + self.segs_h
+            vi4 = vi3 + 1
+
+            prim_indices.extend((vi1, vi4, vi3) if self.invert else (vi1, vi2, vi3))
+            prim_indices.extend((vi1, vi2, vi4) if self.invert else (vi2, vi4, vi3))
+
+        return vertex_cnt
+
+    def create_bottom_pole_triangles(self, index_offset, vdata_values, prim_indices):
+        """Define the triangle vertices and their order along a bottom pole.
+        """
+        # Define triangle vertices.
+        vertex_cnt = self.get_cap_edge_vertices(vdata_values)
+
+        # Define the vertex order of the triangles.
+        for i in range(self.segs_h):
+            vi1 = i + index_offset
+            vi2 = vi1 + self.segs_h + 1
+            vi3 = vi1 + self.segs_h
+            prim_indices.extend((vi1, vi2, vi3))
+
+        return vertex_cnt
+
+    def create_top_edge_quads(self, index_offset, prim_indices):
+        """Define the vertex order of the polygons along a top cap.
+        """
+        index_offset -= (self.segs_h - 1) + self.segs_h + 2
+
+        for i in range(self.segs_h):
+            vi1 = i + index_offset
+            vi2 = vi1 + 1
+            vi3 = vi2 + self.segs_h
+            vi4 = vi3 + 1
+
+            prim_indices.extend((vi1, vi2, vi4) if self.invert else (vi1, vi2, vi3))
+            prim_indices.extend((vi1, vi4, vi3) if self.invert else (vi2, vi4, vi3))
+
+    def create_top_pole_triangles(self, index_offset, prim_indices):
+        """Define the vertex order of the triangles along a top pole.
+        """
+        for i in range(self.segs_h):
+            vi1 = index_offset - i
+            vi2 = vi1 - self.segs_h - 1
+            vi3 = vi1 - self.segs_h
+
+            prim_indices.extend((vi1, vi2, vi3))
+
+
+class SphereCapGeometry:
+    """A mixin class that provides functionality for creating sphere cap vertex data and primitives.
+    """
+
+    def create_bottom_cap_triangles(self, vdata_values, prim_indices, cap):
+        """Define the bottom cap triangle vertices and their order.
+        """
+        # Define triangle vertices.
+        vertex_cnt = self.get_cap_triangle_vertices(vdata_values, cap)
+
+        # Define the vertex order of the triangles.
+        for i in range(1, self.segs_h + 1):
+            prim_indices.extend((0, i + 1, i))
+
+        return vertex_cnt
+
+    def create_bottom_cap_quads(self, index_offset, vdata_values, prim_indices, cap):
+        """Define the bottom cap quad vertices and their order.
+        """
+        # Define quad vertices.
+        vertex_cnt = self.get_cap_quad_vertices(vdata_values, cap)
+
+        # Define the vertex order of the quads.
+        for i in range(1, self.segs_bc):
+            for j in range(self.segs_h):
+                vi1 = index_offset + j
+                vi2 = vi1 - self.segs_h - 1
+                vi3 = vi2 + 1
+                vi4 = vi1 + 1
+                prim_indices.extend((vi1, vi2, vi4) if self.invert else (vi1, vi2, vi3))
+                prim_indices.extend((vi2, vi3, vi4) if self.invert else (vi1, vi3, vi4))
+            index_offset += self.segs_h + 1
+
+        return vertex_cnt
+
+    def create_top_cap_triangles(self, index_offset, vdata_values, prim_indices, cap):
+        """Define the triangle vertices and their order of a top cap.
+        """
+        # Define triangle vertices.
+        vertex_cnt = self.get_cap_triangle_vertices(vdata_values, cap)
+
+        # Define the vertex order of the triangles.
+        for i in range(index_offset + 1, index_offset + self.segs_h + 1):
+            prim_indices.extend((index_offset, i, i + 1))
+
+        return vertex_cnt
+
+    def create_top_cap_quads(self, index_offset, vdata_values, prim_indices, cap):
+        """Define the quad vertices and their orders of a top cap.
+        """
+        # Define cap quad vertices.
+        vertex_cnt = self.get_cap_quad_vertices(vdata_values, cap)
+
+        # Define the vertex order.
+        for i in range(1, self.segs_tc):
+            for j in range(self.segs_h):
+                vi1 = index_offset + j
+                vi2 = vi1 - self.segs_h - 1
+                vi3 = vi2 + 1
+                vi4 = vi1 + 1
+                prim_indices.extend((vi1, vi3, vi2) if self.invert else (vi1, vi4, vi2))
+                prim_indices.extend((vi1, vi4, vi3) if self.invert else (vi4, vi3, vi2))
+            index_offset += self.segs_h + 1
+
+        return vertex_cnt
+
+
+class BasicSphere(SphereGeometry, SphereCapGeometry):
+    """A class that provides functionality for creating a sphere model
+    """
+
+    def define_bottom_cap(self, index_offset, vdata_values, prim_indices, cap):
+        """Define bottom cap.
+        """
+        vertex_cnt = 0
+
+        if self.bottom_clip > -1:
+            if self.segs_bc:
+                vertex_cnt += self.create_bottom_cap_triangles(vdata_values, prim_indices, cap)
+                vertex_cnt += self.create_bottom_cap_quads(vertex_cnt, vdata_values, prim_indices, cap)
+                index_offset += vertex_cnt
+            temp_cnt = self.create_cap_edge_vertices(vdata_values, cap)
+            vertex_cnt += temp_cnt + self.create_bottom_edge_quads(index_offset, vdata_values, prim_indices)
+        else:
+            temp_cnt = self.create_cap_pole(vdata_values, cap)
+            vertex_cnt += temp_cnt + self.create_bottom_pole_triangles(index_offset, vdata_values, prim_indices)
+
+        return vertex_cnt, index_offset + temp_cnt
+
+    def define_top_cap(self, index_offset, vdata_values, prim_indices, cap):
+        """Define a top cap.
+        """
+        vertex_cnt = 0
+
+        if self.top_clip < 1.:
+            vertex_cnt += self.create_cap_edge_vertices(vdata_values, cap)
+            self.create_top_edge_quads(index_offset + vertex_cnt - 1, prim_indices)
+
+            if self.segs_tc:
+                vertex_cnt += self.create_top_cap_triangles(index_offset + vertex_cnt, vdata_values, prim_indices, cap)
+                vertex_cnt += self.create_top_cap_quads(index_offset + vertex_cnt, vdata_values, prim_indices, cap)
+        else:
+            vertex_cnt += self.create_cap_pole(vdata_values, cap)
+            self.create_top_pole_triangles(index_offset + vertex_cnt - 1, prim_indices)
+
+        return vertex_cnt
+
+
+class SphereVariables:
+    """A class that provides functionality for calculating variables to create a sphere model
+    """
+
+    def define_variables(self):
+        self.top_height = self.radius * self.top_clip
+        self.bottom_height = self.radius * self.bottom_clip
+        self.thickness = self.radius - self.inner_radius
+
+        if self.inner_radius:
+            if (self.top_height - self.bottom_height) * 0.5 <= self.thickness:
+                self.inner_radius = 0
+
+        self.slice_rad = math.pi * self.slice_deg / 180.
+        self.delta_angle_h = math.pi * ((360 - self.slice_deg) / 180) / self.segs_h
+
+        # Use np.clip to prevent ValueError: math domain error raised from math.acos.
+        self.bottom_angle = math.pi - math.acos(np.clip(self.bottom_height / self.radius, -1.0, 1.0))
+        self.top_angle = math.acos(np.clip(self.top_height / self.radius, -1.0, 1.0))
+        self.delta_angle_v = (math.pi - self.bottom_angle - self.top_angle) / self.segs_v
+
+
+class Sphere(SphereVariables, BasicSphere, ProceduralGeometry):
     """A class to create a sphere.
 
         Args:
@@ -157,101 +362,6 @@ class BasicSphere:
 
         return self.segs_h + 1
 
-    def create_cap_pole(self, vdata_values, cap):
-        """Helper method to define the pole triangle vertices of a bottom or top.
-        """
-        normal = cap.normal * -1 if self.invert else cap.normal
-        v = 0 if cap.is_bottom else 1
-
-        # Define the pole triangle vertices.
-        for i in range(self.segs_h):
-            uv = Vec2(i / self.segs_h, v)
-            vdata_values.extend([*cap.pole_vertex, *self.color, *normal, *uv])
-
-        return self.segs_h
-
-    def create_bottom_cap_triangles(self, vdata_values, prim_indices, cap):
-        """Define the bottom cap triangle vertices and their order.
-        """
-        # Define triangle vertices.
-        vertex_cnt = self.get_cap_triangle_vertices(vdata_values, cap)
-
-        # Define the vertex order of the triangles.
-        for i in range(1, self.segs_h + 1):
-            prim_indices.extend((0, i + 1, i))
-
-        return vertex_cnt
-
-    def create_bottom_cap_quads(self, index_offset, vdata_values, prim_indices, cap):
-        """Define the bottom cap quad vertices and their order.
-        """
-        # Define quad vertices.
-        vertex_cnt = self.get_cap_quad_vertices(vdata_values, cap)
-
-        # Define the vertex order of the quads.
-        for i in range(1, self.segs_bc):
-            for j in range(self.segs_h):
-                vi1 = index_offset + j
-                vi2 = vi1 - self.segs_h - 1
-                vi3 = vi2 + 1
-                vi4 = vi1 + 1
-                prim_indices.extend((vi1, vi2, vi4) if self.invert else (vi1, vi2, vi3))
-                prim_indices.extend((vi2, vi3, vi4) if self.invert else (vi1, vi3, vi4))
-            index_offset += self.segs_h + 1
-
-        return vertex_cnt
-
-    def create_bottom_edge_quads(self, index_offset, vdata_values, prim_indices):
-        """Define the vertices and their order along a bottom cap.
-        """
-        # Define the vertices along the bottom cap.
-        vertex_cnt = self.get_cap_edge_vertices(vdata_values)
-
-        # Define the vertex order of the polygon along the bottom pole or cap.
-        for i in range(self.segs_h):
-            vi1 = i + index_offset
-            vi2 = vi1 + 1
-            vi3 = vi2 + self.segs_h
-            vi4 = vi3 + 1
-
-            prim_indices.extend((vi1, vi4, vi3) if self.invert else (vi1, vi2, vi3))
-            prim_indices.extend((vi1, vi2, vi4) if self.invert else (vi2, vi4, vi3))
-
-        return vertex_cnt
-
-    def create_bottom_pole_triangles(self, index_offset, vdata_values, prim_indices):
-        """Define the triangle vertices and their order along a bottom pole.
-        """
-        # Define triangle vertices.
-        vertex_cnt = self.get_cap_edge_vertices(vdata_values)
-
-        # Define the vertex order of the triangles.
-        for i in range(self.segs_h):
-            vi1 = i + index_offset
-            vi2 = vi1 + self.segs_h + 1
-            vi3 = vi1 + self.segs_h
-            prim_indices.extend((vi1, vi2, vi3))
-
-        return vertex_cnt
-
-    def define_bottom_cap(self, index_offset, vdata_values, prim_indices, cap):
-        """Define bottom cap.
-        """
-        vertex_cnt = 0
-
-        if self.bottom_clip > -1:
-            if self.segs_bc:
-                vertex_cnt += self.create_bottom_cap_triangles(vdata_values, prim_indices, cap)
-                vertex_cnt += self.create_bottom_cap_quads(vertex_cnt, vdata_values, prim_indices, cap)
-                index_offset += vertex_cnt
-            temp_cnt = self.create_cap_edge_vertices(vdata_values, cap)
-            vertex_cnt += temp_cnt + self.create_bottom_edge_quads(index_offset, vdata_values, prim_indices)
-        else:
-            temp_cnt = self.create_cap_pole(vdata_values, cap)
-            vertex_cnt += temp_cnt + self.create_bottom_pole_triangles(index_offset, vdata_values, prim_indices)
-
-        return vertex_cnt, index_offset + temp_cnt
-
     def create_bottom(self, index_offset, vdata_values, prim_indices):
         """Create bottom.
         """
@@ -266,79 +376,6 @@ class BasicSphere:
         vertex_cnt, index_offset = self.define_bottom_cap(
             index_offset, vdata_values, prim_indices, cap)
         return vertex_cnt, index_offset
-
-    def create_top_edge_quads(self, index_offset, prim_indices):
-        """Define the vertex order of the polygons along a top cap.
-        """
-        index_offset -= (self.segs_h - 1) + self.segs_h + 2
-
-        for i in range(self.segs_h):
-            vi1 = i + index_offset
-            vi2 = vi1 + 1
-            vi3 = vi2 + self.segs_h
-            vi4 = vi3 + 1
-
-            prim_indices.extend((vi1, vi2, vi4) if self.invert else (vi1, vi2, vi3))
-            prim_indices.extend((vi1, vi4, vi3) if self.invert else (vi2, vi4, vi3))
-
-    def create_top_pole_triangles(self, index_offset, prim_indices):
-        """Define the vertex order of the triangles along a top pole.
-        """
-        for i in range(self.segs_h):
-            vi1 = index_offset - i
-            vi2 = vi1 - self.segs_h - 1
-            vi3 = vi1 - self.segs_h
-
-            prim_indices.extend((vi1, vi2, vi3))
-
-    def create_top_cap_triangles(self, index_offset, vdata_values, prim_indices, cap):
-        """Define the triangle vertices and their order of a top cap.
-        """
-        # Define triangle vertices.
-        vertex_cnt = self.get_cap_triangle_vertices(vdata_values, cap)
-
-        # Define the vertex order of the triangles.
-        for i in range(index_offset + 1, index_offset + self.segs_h + 1):
-            prim_indices.extend((index_offset, i, i + 1))
-
-        return vertex_cnt
-
-    def create_top_cap_quads(self, index_offset, vdata_values, prim_indices, cap):
-        """Define the quad vertices and their orders of a top cap.
-        """
-        # Define cap quad vertices.
-        vertex_cnt = self.get_cap_quad_vertices(vdata_values, cap)
-
-        # Define the vertex order.
-        for i in range(1, self.segs_tc):
-            for j in range(self.segs_h):
-                vi1 = index_offset + j
-                vi2 = vi1 - self.segs_h - 1
-                vi3 = vi2 + 1
-                vi4 = vi1 + 1
-                prim_indices.extend((vi1, vi3, vi2) if self.invert else (vi1, vi4, vi2))
-                prim_indices.extend((vi1, vi4, vi3) if self.invert else (vi4, vi3, vi2))
-            index_offset += self.segs_h + 1
-
-        return vertex_cnt
-
-    def define_top_cap(self, index_offset, vdata_values, prim_indices, cap):
-        """Define a top cap.
-        """
-        vertex_cnt = 0
-
-        if self.top_clip < 1.:
-            vertex_cnt += self.create_cap_edge_vertices(vdata_values, cap)
-            self.create_top_edge_quads(index_offset + vertex_cnt - 1, prim_indices)
-
-            if self.segs_tc:
-                vertex_cnt += self.create_top_cap_triangles(index_offset + vertex_cnt, vdata_values, prim_indices, cap)
-                vertex_cnt += self.create_top_cap_quads(index_offset + vertex_cnt, vdata_values, prim_indices, cap)
-        else:
-            vertex_cnt += self.create_cap_pole(vdata_values, cap)
-            self.create_top_pole_triangles(index_offset + vertex_cnt - 1, prim_indices)
-
-        return vertex_cnt
 
     def create_top(self, index_offset, vdata_values, prim_indices):
         """Create top.
@@ -600,26 +637,6 @@ class BasicSphere:
             total_vertex_cnt += vertex_cnt
 
         return total_vertex_cnt
-
-    def define_variables(self):
-        self.top_height = self.radius * self.top_clip
-        self.bottom_height = self.radius * self.bottom_clip
-        self.thickness = self.radius - self.inner_radius
-
-        if self.inner_radius:
-            if (self.top_height - self.bottom_height) * 0.5 <= self.thickness:
-                self.inner_radius = 0
-
-        self.slice_rad = math.pi * self.slice_deg / 180.
-        self.delta_angle_h = math.pi * ((360 - self.slice_deg) / 180) / self.segs_h
-
-        # Use np.clip to prevent ValueError: math domain error raised from math.acos.
-        self.bottom_angle = math.pi - math.acos(np.clip(self.bottom_height / self.radius, -1.0, 1.0))
-        self.top_angle = math.acos(np.clip(self.top_height / self.radius, -1.0, 1.0))
-        self.delta_angle_v = (math.pi - self.bottom_angle - self.top_angle) / self.segs_v
-
-
-class Sphere(BasicSphere, ProceduralGeometry):
 
     def get_geom_node(self):
         # Calculate required values to define variables.

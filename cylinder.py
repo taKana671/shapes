@@ -6,7 +6,7 @@ from panda3d.core import Vec3, Point3, Vec2
 from .create_geometry import ProceduralGeometry
 
 
-class CylinderPrimitives:
+class CylinderPrimitives:  # -> CylinderGeometryに変える(Boxも)
 
     def create_bottom_cap_triangles(self, index_offset, vdata_values, prim_indices):
         vertex_cnt = 0
@@ -106,7 +106,7 @@ class CylinderPrimitives:
         return vertex_cnt
 
 
-class CylinderSliceCapPrimitive:
+class CylinderSliceCapPrimitive:  # -> CylinderDliceCapGeometryに変える
 
     def create_slice_cap_quads(self, index_offset, vdata_values, prim_indices):
         vertex_cnt = 0
@@ -142,14 +142,6 @@ class BasicCylinder(CylinderPrimitives, CylinderSliceCapPrimitive):
         self.thickness = self.radius - self.inner_radius
         self.slice_rad = math.pi * self.ring_slice_deg / 180
         self.delta_rad = math.pi * ((360 - self.ring_slice_deg) / 180) / self.segs_c
-
-        # self.slice_caps = []
-
-        # if self.start_slice_cap:
-        #     self.slice_caps.append(True)
-
-        # if self.end_slice_cap:
-        #     self.slice_caps.append(False)
 
     def create_cap_triangles(self, vdata_values, bottom=True):
         normal = Vec3(0, 0, 1) if self.invert else Vec3(0, 0, -1)
@@ -295,7 +287,6 @@ class Cylinder(BasicCylinder, ProceduralGeometry):
 
     def __init__(self, radius=1., inner_radius=0., height=1., segs_c=40, segs_a=2, segs_top_cap=3,
                  segs_bottom_cap=3, ring_slice_deg=0, slice_caps_radial=3, slice_caps_axial=2, invert=False):
-                #  start_slice_cap=True, end_slice_cap=True, invert=False):
         self.color = (1, 1, 1, 1)
         self.slice_caps = [True, False]
 
@@ -311,20 +302,7 @@ class Cylinder(BasicCylinder, ProceduralGeometry):
         self.ring_slice_deg = ring_slice_deg
         self.segs_sc_r = slice_caps_radial
         self.segs_sc_a = slice_caps_axial
-        # self.start_slice_cap = start_slice_cap
-        # self.end_slice_cap = end_slice_cap
         self.invert = invert
-
-
-    # def define_variables(self):
-    #     super().define_variables()
-    #     self.slice_caps = []
-
-    #     if self.start_slice_cap:
-    #         self.slice_caps.append(True)
-
-    #     if self.end_slice_cap:
-    #         self.slice_caps.append(False)
 
     def get_geom_node(self):
         self.define_variables()

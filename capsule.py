@@ -7,7 +7,7 @@ from panda3d.core import Vec3, Point3, Vec2
 
 from .create_geometry import ProceduralGeometry
 from .cylinder import BasicCylinder
-from .sphere import BasicSphere
+from .sphere import SphereGeometry, SphereVariables
 
 
 class Capsule(BasicCylinder, ProceduralGeometry):
@@ -148,21 +148,85 @@ class Capsule(BasicCylinder, ProceduralGeometry):
         return geom_node
 
 
-class CapsuleHemisphere(BasicSphere):
+class BasicHemisphere(SphereVariables, SphereGeometry):
+    """A class that provides functionality for creating a hemisphere model
+    """
+
+    def create_bottom(self, index_offset, vdata_values, prim_indices):
+        cap = SimpleNamespace(
+            z=self.bottom_height,
+            normal=Vec3(0., 0., -1.),
+            pole_vertex=Point3(0, 0, -self.radius) + self.center,
+            is_bottom=True
+        )
+        vertex_cnt = 0
+
+        if self.bottom_clip > -1:
+            offset_cnt = self.create_cap_edge_vertices(vdata_values, cap)
+            vertex_cnt += self.create_bottom_edge_quads(index_offset, vdata_values, prim_indices)
+        else:
+            offset_cnt = self.create_cap_pole(vdata_values, cap)
+            vertex_cnt += self.create_bottom_pole_triangles(index_offset, vdata_values, prim_indices)
+
+        return vertex_cnt + offset_cnt, index_offset + offset_cnt
+
+    def create_top(self, index_offset, vdata_values, prim_indices):
+        cap = SimpleNamespace(
+            z=self.top_height,
+            normal=Vec3(0., 0., 1.),
+            pole_vertex=Point3(0, 0, self.radius) + self.center,
+            is_bottom=False
+        )
+        vertex_cnt = 0
+
+        if self.top_clip < 1.:
+            vertex_cnt += self.create_cap_edge_vertices(vdata_values, cap)
+            self.create_top_edge_quads(index_offset + vertex_cnt - 1, prim_indices)
+        else:
+            vertex_cnt += self.create_cap_pole(vdata_values, cap)
+            self.create_top_pole_triangles(index_offset + vertex_cnt - 1, prim_indices)
+
+        return vertex_cnt
+
+
+class CapsuleHemisphere(BasicHemisphere):
+
+    """A class that creates the hemispheres at both ends of the capsule
+
+        Args:
+            center (panda3d.core.Point3): the center of a hemisphere
+            radius (float): the radius of hemisphere; greater than 0; default is 1.
+            inner_radius (float):
+                the radius of the inner sphere.
+                0 <= inner_radius <= radius; default is 0.
+            segs_h(int): subdivisions along horizontal circles; minimum = 3; default is 40.
+            segs_v (int): subdivisions along vertical circles; minimum = 2; default is 20.
+            segs_slice_caps (int): radial subdivisions of the slice caps; minimum = 0 (no caps); default is 2.
+            slice_deg (float):
+                the angle of the pie slice removed from the hemisphere, in degrees.
+                0 <= slice_deg <= 360; default is 0.
+            bottom_clip (float): relative height of the plane that cuts off a bottom part of the hemisphere.
+            top_clip (float): relative height of the plane that cuts off a top part of the hemisphere.
+            invert (bool): whether or not the geometry should be rendered inside-out; default is False.
+    """
 
     def __init__(self, center, radius=1., inner_radius=0, segs_h=40, segs_v=20,
                  segs_slice_caps=2, slice_deg=0, bottom_clip=-1., top_clip=1., invert=False):
-        super().__init__(
-            radius=radius,
-            inner_radius=inner_radius,
-            segs_h=segs_h,
-            segs_v=segs_v,
-            segs_slice_caps=segs_slice_caps,
-            slice_deg=slice_deg,
-            bottom_clip=bottom_clip,
-            top_clip=top_clip,
-            invert=invert
-        )
+        self.color = (1, 1, 1, 1)
+        self.radius = radius
+        self.inner_radius = inner_radius
+        self.segs_h = segs_h
+        self.segs_v = segs_v
+
+        # self.segs_tc = 4
+        # self.segs_bc = 4
+        self.segs_sc = segs_slice_caps
+
+        self.top_clip = top_clip
+        self.bottom_clip = bottom_clip
+        self.slice_deg = slice_deg
+        self.invert = invert
+
         self.center = center
         self.define_variables()
 
@@ -207,42 +271,6 @@ class CapsuleHemisphere(BasicSphere):
             vdata_values.extend([*vertex, *self.color, *normal, *uv])
 
         return self.segs_h + 1
-
-    def create_bottom(self, index_offset, vdata_values, prim_indices):
-        cap = SimpleNamespace(
-            z=self.bottom_height,
-            normal=Vec3(0., 0., -1.),
-            pole_vertex=Point3(0, 0, -self.radius) + self.center,
-            is_bottom=True
-        )
-        vertex_cnt = 0
-
-        if self.bottom_clip > -1:
-            offset_cnt = self.create_cap_edge_vertices(vdata_values, cap)
-            vertex_cnt += self.create_bottom_edge_quads(index_offset, vdata_values, prim_indices)
-        else:
-            offset_cnt = self.create_cap_pole(vdata_values, cap)
-            vertex_cnt += self.create_bottom_pole_triangles(index_offset, vdata_values, prim_indices)
-
-        return vertex_cnt + offset_cnt, index_offset + offset_cnt
-
-    def create_top(self, index_offset, vdata_values, prim_indices):
-        cap = SimpleNamespace(
-            z=self.top_height,
-            normal=Vec3(0., 0., 1.),
-            pole_vertex=Point3(0, 0, self.radius) + self.center,
-            is_bottom=False
-        )
-        vertex_cnt = 0
-
-        if self.top_clip < 1.:
-            vertex_cnt += self.create_cap_edge_vertices(vdata_values, cap)
-            self.create_top_edge_quads(index_offset + vertex_cnt - 1, prim_indices)
-        else:
-            vertex_cnt += self.create_cap_pole(vdata_values, cap)
-            self.create_top_pole_triangles(index_offset + vertex_cnt - 1, prim_indices)
-
-        return vertex_cnt
 
     def create_mantle_quads(self, index_offset, vdata_values, prim_indices):
         n = self.segs_h + 1

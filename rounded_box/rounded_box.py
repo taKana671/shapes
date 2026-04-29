@@ -4,9 +4,8 @@ from enum import Flag, auto
 from panda3d.core import Vec3, Point3, Vec2
 
 from ..box import BasicBox
-from ..cylinder import BasicCylinder
-from ..cylinder import CylinderPrimitives
-from ..capsule import CapsuleHemisphere
+from ..cylinder import BasicCylinder, CylinderPrimitives
+from ..capsule import BasicHemisphere
 
 
 class Sides(Flag):
@@ -122,7 +121,6 @@ class BasicRoundedBox(BasicBox):
         return vertex_cnt
 
 
-# class VerticalRoundedEdge(BasicCylinder):
 class VerticalRoundedEdge(CylinderPrimitives):
     """A class to create a vertical cylinder on box edge.
 
@@ -142,7 +140,6 @@ class VerticalRoundedEdge(CylinderPrimitives):
 
     def __init__(self, center, start_angle_deg, radius=1., inner_radius=0., height=1., segs_c=40,
                  segs_a=2, segs_top_cap=3, segs_bottom_cap=3, ring_slice_deg=0, invert=False):
-        # super().__init__(
         self.color = (1, 1, 1, 1)
         self.radius = radius
         self.inner_radius = inner_radius
@@ -283,7 +280,6 @@ class HorizontalRoundedEdge(BasicCylinder):
     def __init__(self, center, start_angle_deg, radius=1., inner_radius=0., height=1.,
                  segs_c=40, segs_a=2, segs_top_cap=3, segs_bottom_cap=3, ring_slice_deg=0,
                  start_slice_cap=False, end_slice_cap=False, invert=False, x_axis=True):
-        # super().__init__(
         self.color = (1, 1, 1, 1)
         self.radius = radius
         self.inner_radius = inner_radius
@@ -298,7 +294,7 @@ class HorizontalRoundedEdge(BasicCylinder):
         self.start_slice_cap = start_slice_cap
         self.end_slice_cap = end_slice_cap
         self.invert = invert
-        # )
+
         # If True, tilt a vertical cylinder, whose bottom center is the point (0, 0, 0),
         # 90 degrees in the x-axis direction, and if not, 90 degrees in the y-axis direction.
         self.x_axis = x_axis
@@ -482,7 +478,7 @@ class HorizontalRoundedEdge(BasicCylinder):
         return vertex_cnt
 
 
-class QuarteredHemisphereCorner(CapsuleHemisphere):
+class QuarteredHemisphereCorner(BasicHemisphere):
     """A class to create a hemisphere.
 
        Args:
@@ -507,20 +503,23 @@ class QuarteredHemisphereCorner(CapsuleHemisphere):
 
     def __init__(self, center, start_angle_deg=0, radius=1., inner_radius=0, segs_h=40, segs_v=20,
                  segs_slice_caps=2, slice_deg=0, bottom_clip=-1., top_clip=1., invert=False):
-        super().__init__(
-            center=center,
-            radius=radius,
-            inner_radius=inner_radius,
-            segs_h=segs_h,
-            segs_v=segs_v,
-            segs_slice_caps=segs_slice_caps,
-            slice_deg=slice_deg,
-            bottom_clip=bottom_clip,
-            top_clip=top_clip,
-            invert=invert
-        )
+        self.color = (1, 1, 1, 1)
+        self.center = center
+        self.radius = radius
+        self.inner_radius = inner_radius
+        self.segs_h = segs_h
+        self.segs_v = segs_v
+        self.segs_sc = segs_slice_caps
+        self.slice_deg = slice_deg
+        self.bottom_clip = bottom_clip
+        self.top_clip = top_clip
+        self.invert = invert
         self.start_angle_deg = start_angle_deg
+        self.define_variables()
+
+    def define_variables(self):
         self.start_angle_rad = math.pi * self.start_angle_deg / 180
+        super().define_variables()
 
     def create_quartered_hemisphere(self, vertex_cnt, vdata_values, prim_indices):
         vertex_cnt, offset = self.create_bottom(vertex_cnt, vdata_values, prim_indices)
