@@ -4,7 +4,7 @@ from enum import Flag, auto
 from panda3d.core import Vec3, Point3, Vec2
 
 from ..box import BasicBox
-from ..cylinder import BasicCylinder, CylinderPrimitives
+from ..cylinder import BasicCylinder, CylinderGeometry
 from ..capsule import BasicHemisphere
 
 
@@ -121,7 +121,7 @@ class BasicRoundedBox(BasicBox):
         return vertex_cnt
 
 
-class VerticalRoundedEdge(CylinderPrimitives):
+class VerticalRoundedEdge(CylinderGeometry):
     """A class to create a vertical cylinder on box edge.
 
        Args:

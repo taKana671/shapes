@@ -1,3 +1,4 @@
+
 import array
 
 from panda3d.core import Point3, Point2
@@ -38,8 +39,8 @@ class RoundedCornerBox(BasicRoundedBox, ProceduralGeometry):
     def __init__(self, width=2., depth=2., height=2., segs_w=4, segs_d=4, segs_z=4,
                  thickness=0., open_top=False, open_bottom=False, invert=False, corner_radius=0.5,
                  rounded_f_left=True, rounded_f_right=True, rounded_b_left=True, rounded_b_right=True):
-        # super().__init__(
         self.color = (1, 1, 1, 1)
+        self.center = Point3(0, 0, 0)
         self.width = width
         self.depth = depth
         self.height = height
@@ -53,9 +54,7 @@ class RoundedCornerBox(BasicRoundedBox, ProceduralGeometry):
         self.open_right = False
         self.open_top = True if thickness > 0 else open_top
         self.open_bottom = True if thickness > 0 else open_bottom
-        self.center = Point3(0, 0, 0)
         self.invert = invert
-        # )
 
         self.c_radius = corner_radius
         self.rf_left = rounded_f_left
@@ -208,23 +207,8 @@ class RoundedCornerBox(BasicRoundedBox, ProceduralGeometry):
         self._width = self.width - self.c_radius * 2
         self.dims = (self.width, self._depth, self.height)
 
-        # self.segs = {'x': self.segs_w, 'y': self.segs_d, 'z': self.segs_z}
-
-        # self.open_sides = {
-        #     '-yz': self.open_left,
-        #     'yz': self.open_right,
-        #     '-zx': self.open_back,
-        #     'zx': self.open_front,
-        #     '-xy': self.open_bottom,
-        #     'xy': self.open_top
-        # }
-
         if self.thickness > 0:
-            outer_box_details = [
-                ['x', self._width, self.open_left, self.open_right],
-                ['y', self._depth, self.open_back, self.open_front],
-                ['z', self.height, self.open_bottom, self.open_top]
-            ]
+            outer_box_details = self.get_outer_details(self._width, self._depth, self.height)
             self.define_inner_details(outer_box_details)
 
         # Variables for the corner cylinders.

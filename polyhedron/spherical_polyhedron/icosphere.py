@@ -10,6 +10,9 @@ class Icosphere(SphericalPolyhedron):
             max_depth (int): the number of divisions of one triangle; cannot be negative.
             scale (float): the size of sphere; greater than 0.
     """
+    def __init__(self, max_depth=4, scale=2):
+        super().__init__(max_depth, scale)
+        self.color = (1, 1, 1, 1)
 
     def generate_triangles(self):
         pts = [

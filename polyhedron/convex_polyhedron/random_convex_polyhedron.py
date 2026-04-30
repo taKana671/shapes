@@ -14,6 +14,7 @@ class RandomConvexPolyhedron(ConvexPolyhedron):
 
     def __init__(self, polygons, max_depth=4, scale=2.):
         super().__init__(max_depth, scale)
+        self.color = (1, 1, 1, 1)
         self.polygons = polygons
         self.normal = np.zeros(3)
         self.polyhedron_org_center = np.mean(np.concatenate(self.polygons), axis=0)

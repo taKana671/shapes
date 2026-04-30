@@ -7,7 +7,7 @@ from .create_geometry import ProceduralGeometry
 
 
 class BasicBox:
-    """A mixin class for creating the sides of a box"""
+    """A mixin class that provides functionality for creating the sides of a box"""
 
     def define_vertex_order(self, index_offset, prim_indices, direction, inner_range, outer_range=1):
         for i in range(outer_range):
@@ -142,6 +142,14 @@ class BasicBox:
         pts = [(self.inner_corners[f'-{s}'] - self.inner_corners[s]) for s in 'xyz']
         self.inner_center = Point3(*pts) * 0.5
 
+    def get_outer_details(self, w, d, h):
+        outer_box_details = [
+            ['x', w, self.open_sides['-yz'], self.open_sides['yz']],
+            ['y', d, self.open_sides['-zx'], self.open_sides['zx']],
+            ['z', h, self.open_sides['-xy'], self.open_sides['xy']]
+        ]
+        return outer_box_details
+
     def define_variables(self):
         self.segs = {'x': self.segs_w, 'y': self.segs_d, 'z': self.segs_z}
 
@@ -233,11 +241,7 @@ class Box(BasicBox, ProceduralGeometry):
         self.dims = (self.width, self.depth, self.height)
 
         if self.thickness > 0:
-            outer_box_details = [
-                ['x', self.width, self.open_left, self.open_right],
-                ['y', self.depth, self.open_back, self.open_front],
-                ['z', self.height, self.open_bottom, self.open_top]
-            ]
+            outer_box_details = self.get_outer_details(*self.dims)
             self.define_inner_details(outer_box_details)
 
     def get_geom_node(self):

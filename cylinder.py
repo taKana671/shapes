@@ -6,7 +6,7 @@ from panda3d.core import Vec3, Point3, Vec2
 from .create_geometry import ProceduralGeometry
 
 
-class CylinderPrimitives:  # -> CylinderGeometryに変える(Boxも)
+class CylinderGeometry:
 
     def create_bottom_cap_triangles(self, index_offset, vdata_values, prim_indices):
         vertex_cnt = 0
@@ -106,7 +106,7 @@ class CylinderPrimitives:  # -> CylinderGeometryに変える(Boxも)
         return vertex_cnt
 
 
-class CylinderSliceCapPrimitive:  # -> CylinderDliceCapGeometryに変える
+class CylinderSliceCapGeometry:
 
     def create_slice_cap_quads(self, index_offset, vdata_values, prim_indices):
         vertex_cnt = 0
@@ -136,7 +136,7 @@ class CylinderSliceCapPrimitive:  # -> CylinderDliceCapGeometryに変える
         return vertex_cnt
 
 
-class BasicCylinder(CylinderPrimitives, CylinderSliceCapPrimitive):
+class BasicCylinder(CylinderGeometry, CylinderSliceCapGeometry):
 
     def define_variables(self):
         self.thickness = self.radius - self.inner_radius

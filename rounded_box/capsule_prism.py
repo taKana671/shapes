@@ -29,23 +29,25 @@ class CapsulePrism(BasicRoundedBox, ProceduralGeometry):
 
     def __init__(self, width=1., depth=1., height=1., segs_w=4, segs_d=4, segs_z=4, thickness=0.,
                  rounded_left=True, rounded_right=True, open_top=False, open_bottom=False, invert=False):
-        super().__init__(
-            width=width,
-            depth=depth,
-            height=height,
-            segs_w=segs_w,
-            segs_d=segs_d,
-            segs_z=segs_z,
-            thickness=thickness,
-            invert=invert,
-            open_left=rounded_left,
-            open_right=rounded_right,
-            open_top=True if thickness > 0 else open_top,
-            open_bottom=True if thickness > 0 else open_bottom
-        )
-
+        self.color = (1, 1, 1, 1)
+        self.center = Point3(0, 0, 0)
+        self.width = width
+        self.depth = depth
+        self.height = height
+        self.segs_w = segs_w
+        self.segs_d = segs_d
+        self.segs_z = segs_z
+        self.thickness = thickness
+        self.invert = invert
         self.rounded_left = rounded_left
         self.rounded_right = rounded_right
+
+        self.open_left = rounded_left
+        self.open_right = rounded_right
+        self.open_top = True if thickness > 0 else open_top
+        self.open_bottom = True if thickness > 0 else open_bottom
+        self.open_back = False
+        self.open_front = False
 
     def create_rounded_corners(self, vertex_cnt, vdata_values, prim_indices, side):
         center = Point3(0, 0, -self.height * 0.5)
@@ -79,6 +81,12 @@ class CapsulePrism(BasicRoundedBox, ProceduralGeometry):
     def define_variables(self):
         # Variables for the box.
         super().define_variables()
+        self.dims = (self.width, self.depth, self.height)
+
+        if self.thickness > 0:
+            outer_box_details = self.get_outer_details(*self.dims)
+            self.define_inner_details(outer_box_details)
+
         # Variables for the left and right cylinders.
         self.c_radius = self.depth / 2.
         self.c_inner_radius = 0 if self.thickness <= 0 else self.c_radius - self.thickness

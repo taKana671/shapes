@@ -40,8 +40,8 @@ class RoundedEdgeBox(BasicRoundedBox, ProceduralGeometry):
 
     def __init__(self, width=2., depth=2., height=2., segs_w=4, segs_d=4, segs_z=4,
                  thickness=0., corner_radius=0.5, open_top=False, open_bottom=False, invert=False):
-        # super().__init__(
         self.color = (1, 1, 1, 1)
+        self.center = Point3(0, 0, 0)
         self.width = width
         self.depth = depth
         self.height = height
@@ -55,9 +55,7 @@ class RoundedEdgeBox(BasicRoundedBox, ProceduralGeometry):
         self.open_bottom = open_bottom
         self.open_front = False
         self.open_back = False
-        self.center = Point3(0, 0, 0)
         self.invert = invert
-        # )
         self.c_radius = corner_radius
 
     def create_rect(self, vertex_cnt, vdata_values, prim_indices,
@@ -310,25 +308,10 @@ class RoundedEdgeBox(BasicRoundedBox, ProceduralGeometry):
         self._depth = self.depth - self.c_radius * 2
         self._width = self.width - self.c_radius * 2
         self._height = self.height - self.c_radius * 2
-
         self.dims = (self._width, self._depth, self._height)
-        # self.segs = {'x': self.segs_w, 'y': self.segs_d, 'z': self.segs_z}
-
-        # self.open_sides = {
-        #     '-yz': self.open_left,
-        #     'yz': self.open_right,
-        #     '-zx': self.open_back,
-        #     'zx': self.open_front,
-        #     '-xy': self.open_bottom,
-        #     'xy': self.open_top
-        # }
 
         if self.thickness > 0:
-            outer_box_details = [
-                ['x', self._width, self.open_left, self.open_right],
-                ['y', self._depth, self.open_back, self.open_front],
-                ['z', self._height, self.open_bottom, self.open_top]
-            ]
+            outer_box_details = self.get_outer_details(*self.dims)
             self.define_inner_details(outer_box_details)
 
         # Variables for the corner cylinders.
