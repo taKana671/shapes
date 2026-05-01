@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import numpy as np
 from panda3d.core import Vec3, Point3, Vec2
 
-from .create_geometry import ProceduralGeometry
+from ..create_geometry import ProceduralGeometry
 
 
 class SphereGeometry:

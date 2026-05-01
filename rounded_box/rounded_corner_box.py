@@ -1,4 +1,3 @@
-
 import array
 
 from panda3d.core import Point3, Point2
