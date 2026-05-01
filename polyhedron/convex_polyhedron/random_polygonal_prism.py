@@ -5,10 +5,10 @@ import numpy as np
 from panda3d.core import Vec3, Point3, Vec2
 
 from ...create_geometry import ProceduralGeometry
-from ...cylinder import BasicCylinder
+from ...cylinder import CylinderGeometry
 
 
-class RandomPolygonalPrism(BasicCylinder, ProceduralGeometry):
+class RandomPolygonalPrism(CylinderGeometry, ProceduralGeometry):    
     """A class to create a prism from 3D vertex coordinates of a polygonal base with height 0.
 
         Args:
@@ -25,24 +25,21 @@ class RandomPolygonalPrism(BasicCylinder, ProceduralGeometry):
     """
 
     def __init__(self, vertices, thickness=0.0, height=1, segs_a=2, segs_top_cap=3, segs_bottom_cap=3, invert=False):
+        self.color = (1, 1, 1, 1)
         self.vertices = vertices
         segs_c = len(self.vertices)
         self.center = sum(self.vertices) / segs_c
         radius = math.hypot(*(self.vertices[0] - self.center))
         self.thickness = radius if not thickness else max(0, min(radius, thickness))
 
-        super().__init__(
-            radius=radius,
-            inner_radius=radius - self.thickness,
-            height=height,
-            segs_c=segs_c,
-            segs_a=segs_a,
-            segs_top_cap=segs_top_cap,
-            segs_bottom_cap=segs_bottom_cap,
-            start_slice_cap=False,
-            end_slice_cap=False,
-            invert=invert
-        )
+        self.radius = radius
+        self.inner_radius = radius - self.thickness
+        self.height = height
+        self.segs_c = segs_c
+        self.segs_a = segs_a
+        self.segs_tc = segs_top_cap
+        self.segs_bc = segs_bottom_cap
+        self.invert = invert
 
         self.shifted_vertices = [v - self.center for v in self.vertices + self.vertices[:1]]
         self.edge_length, self.edge_lengths = self.calc_perimeter()
@@ -105,7 +102,7 @@ class RandomPolygonalPrism(BasicCylinder, ProceduralGeometry):
 
         return vertex_cnt
 
-    def create_mantle_quad_vertices(self, index_offset, vdata_values, prim_indices):
+    def create_mantle_quad_vertices(self, vdata_values):
         direction = -1 if self.invert else 1
         vertex_cnt = 0
 

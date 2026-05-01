@@ -7,46 +7,7 @@ from .create_geometry import ProceduralGeometry
 
 
 class BasicBox:
-    """A class to create a cube or cuboid.
-
-        Args:
-            width (float): dimension along the x-axis; greater than zero; default is 1.
-            depth (float): dimension along the y-axis; greater than zero; default is 1.
-            height (float): dimension along the z-axis; greater than zero; default is 1.
-            segs_w (int): the number of subdivisions in width; greater than 1; default is 2.
-            segs_d (int): the number of subdivisions in depth; greater than 1; default is 2.
-            segs_z (int): the number of subdivisions in height; greater than 1; default is 2.
-            thickness (float):
-                offset of inner box sides; 0 means no inner box; default is 0.
-                When creating an inner box, the thickness must be less than the minimum value of width, depth, or height.
-            invert (bool): whether or not the geometry should be rendered inside-out; default is False.
-            open_left (bool): True, no left side; default is False.
-            open_right (bool): True, no right side; default is False.
-            open_back (bool): True, no back side; default is False.
-            open_front (bool): True, no front side; default is False.
-            open_bottom (bool): True, no bottom side; default is False.
-            open_top (bool): True, no top side; default is False.
-    """
-
-    def __init__(self, width=1.0, depth=1.0, height=1.0, segs_w=2, segs_d=2, segs_z=2,
-                 thickness=0, invert=False, open_left=False, open_right=False, open_back=False,
-                 open_front=False, open_bottom=False, open_top=False):
-        self.color = (1, 1, 1, 1)
-        self.width = width
-        self.depth = depth
-        self.height = height
-        self.segs_w = segs_w
-        self.segs_d = segs_d
-        self.segs_z = segs_z
-        self.thickness = thickness
-        self.open_left = open_left
-        self.open_right = open_right
-        self.open_top = open_top
-        self.open_bottom = open_bottom
-        self.open_front = open_front
-        self.open_back = open_back
-        self.center = Point3(0, 0, 0)
-        self.invert = invert
+    """A mixin class that provides functionality for creating the sides of a box"""
 
     def define_vertex_order(self, index_offset, prim_indices, direction, inner_range, outer_range=1):
         for i in range(outer_range):
@@ -64,7 +25,7 @@ class BasicBox:
                     prim_indices.extend((vi1, vi4, vi3) if direction == 1 else (vi1, vi3, vi4))
 
     def create_side(self, index_offset, vdata_values, prim_indices, direction, is_front,
-                    vertex, normal, name, index, offset, segs):
+                    vertex, normal, index, offset, segs):
         vertex_cnt = 0
 
         for i in range(segs.axis_2 + 1):
@@ -163,6 +124,93 @@ class BasicBox:
 
         return name, index, offset, segments
 
+    def define_inner_details(self, outer_box_details):
+        self.inner_corners = {}
+        self.inner_dims = {}
+
+        for axis, dim, open_side1, open_side2 in outer_box_details:
+            th1 = 0. if open_side1 else min(dim, self.thickness)
+            th2 = 0. if open_side2 else min(dim, self.thickness)
+
+            if th1 + th2 > dim:
+                th1 = th2 = dim * .5
+
+            self.inner_corners[f'-{axis}'] = th1
+            self.inner_corners[axis] = th2
+            self.inner_dims[axis] = dim - th1 - th2
+
+        pts = [(self.inner_corners[f'-{s}'] - self.inner_corners[s]) for s in 'xyz']
+        self.inner_center = Point3(*pts) * 0.5
+
+    def get_outer_details(self, w, d, h):
+        outer_box_details = [
+            ['x', w, self.open_sides['-yz'], self.open_sides['yz']],
+            ['y', d, self.open_sides['-zx'], self.open_sides['zx']],
+            ['z', h, self.open_sides['-xy'], self.open_sides['xy']]
+        ]
+        return outer_box_details
+
+    def define_variables(self):
+        self.segs = {'x': self.segs_w, 'y': self.segs_d, 'z': self.segs_z}
+
+        self.open_sides = {
+            '-yz': self.open_left,
+            'yz': self.open_right,
+            '-zx': self.open_back,
+            'zx': self.open_front,
+            '-xy': self.open_bottom,
+            'xy': self.open_top
+        }
+
+    def calc_inner_box_center(self):
+        pts = [(self.inner_corners[f'-{s}'] - self.inner_corners[s]) for s in 'xyz']
+        inner_center = Point3(*pts) * 0.5
+        center = inner_center + self.center
+        return center
+
+
+class Box(BasicBox, ProceduralGeometry):
+    """A class to create a cube or cuboid.
+
+        Args:
+            width (float): dimension along the x-axis; greater than zero; default is 1.
+            depth (float): dimension along the y-axis; greater than zero; default is 1.
+            height (float): dimension along the z-axis; greater than zero; default is 1.
+            segs_w (int): the number of subdivisions in width; greater than 1; default is 2.
+            segs_d (int): the number of subdivisions in depth; greater than 1; default is 2.
+            segs_z (int): the number of subdivisions in height; greater than 1; default is 2.
+            thickness (float):
+                offset of inner box sides; 0 means no inner box; default is 0.
+                When creating an inner box, the thickness must be less than the minimum value of width, depth, or height.
+            invert (bool): whether or not the geometry should be rendered inside-out; default is False.
+            open_left (bool): True, no left side; default is False.
+            open_right (bool): True, no right side; default is False.
+            open_back (bool): True, no back side; default is False.
+            open_front (bool): True, no front side; default is False.
+            open_bottom (bool): True, no bottom side; default is False.
+            open_top (bool): True, no top side; default is False.
+    """
+
+    def __init__(self, width=1.0, depth=1.0, height=1.0, segs_w=2, segs_d=2, segs_z=2,
+                 thickness=0, invert=False, open_left=False, open_right=False, open_back=False,
+                 open_front=False, open_bottom=False, open_top=False):
+        self.color = (1, 1, 1, 1)
+        self.width = width
+        self.depth = depth
+        self.height = height
+        self.segs_w = segs_w
+        self.segs_d = segs_d
+        self.segs_z = segs_z
+        self.thickness = thickness
+        self.open_left = open_left
+        self.open_right = open_right
+        self.open_top = open_top
+        self.open_bottom = open_bottom
+        self.open_front = open_front
+        self.open_back = open_back
+        self.center = Point3(0, 0, 0)
+        self.invert = invert
+
     def create_sides(self, vertex_cnt, vdata_values, prim_indices):
         # vertex_cnt = 0
 
@@ -184,57 +232,17 @@ class BasicBox:
                                                              vertex, normal, name, index, offset, segments)
                 else:
                     vertex_cnt += self.create_side(vertex_cnt, vdata_values, prim_indices, direction, is_front,
-                                                   vertex, normal, name, index, offset, segments)
+                                                   vertex, normal, index, offset, segments)
 
         return vertex_cnt
 
-    def define_inner_details(self, outer_box_details):
-        self.inner_corners = {}
-        self.inner_dims = {}
-
-        for axis, dim, open_side1, open_side2 in outer_box_details:
-            th1 = 0. if open_side1 else min(dim, self.thickness)
-            th2 = 0. if open_side2 else min(dim, self.thickness)
-
-            if th1 + th2 > dim:
-                th1 = th2 = dim * .5
-
-            self.inner_corners[f'-{axis}'] = th1
-            self.inner_corners[axis] = th2
-            self.inner_dims[axis] = dim - th1 - th2
-
-        pts = [(self.inner_corners[f'-{s}'] - self.inner_corners[s]) for s in 'xyz']
-        self.inner_center = Point3(*pts) * 0.5
-
     def define_variables(self):
+        super().define_variables()
         self.dims = (self.width, self.depth, self.height)
-        self.segs = {'x': self.segs_w, 'y': self.segs_d, 'z': self.segs_z}
-
-        self.open_sides = {
-            '-yz': self.open_left,
-            'yz': self.open_right,
-            '-zx': self.open_back,
-            'zx': self.open_front,
-            '-xy': self.open_bottom,
-            'xy': self.open_top
-        }
 
         if self.thickness > 0:
-            outer_box_details = [
-                ['x', self.width, self.open_left, self.open_right],
-                ['y', self.depth, self.open_back, self.open_front],
-                ['z', self.height, self.open_bottom, self.open_top]
-            ]
+            outer_box_details = self.get_outer_details(*self.dims)
             self.define_inner_details(outer_box_details)
-
-    def calc_inner_box_center(self):
-        pts = [(self.inner_corners[f'-{s}'] - self.inner_corners[s]) for s in 'xyz']
-        inner_center = Point3(*pts) * 0.5
-        center = inner_center + self.center
-        return center
-
-
-class Box(BasicBox, ProceduralGeometry):
 
     def get_geom_node(self):
         self.define_variables()

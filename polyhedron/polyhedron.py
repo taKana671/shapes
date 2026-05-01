@@ -38,7 +38,6 @@ class Polyhedron(TriangleGenerator, ProceduralGeometry):
     def __init__(self, max_depth=4, scale=2):
         self.max_depth = max_depth
         self.scale = scale
-        self.color = (1, 1, 1, 1)
 
     @abstractmethod
     def generate_triangles(self):

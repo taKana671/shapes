@@ -4,6 +4,7 @@ from panda3d.core import Point3, Point2
 
 from ..create_geometry import ProceduralGeometry
 from .rounded_box import Sides, BasicRoundedBox
+from ..box import Box
 
 
 class RoundedCornerBox(BasicRoundedBox, ProceduralGeometry):
@@ -37,22 +38,22 @@ class RoundedCornerBox(BasicRoundedBox, ProceduralGeometry):
     def __init__(self, width=2., depth=2., height=2., segs_w=4, segs_d=4, segs_z=4,
                  thickness=0., open_top=False, open_bottom=False, invert=False, corner_radius=0.5,
                  rounded_f_left=True, rounded_f_right=True, rounded_b_left=True, rounded_b_right=True):
-        super().__init__(
-            width=width,
-            depth=depth,
-            height=height,
-            segs_w=segs_w,
-            segs_d=segs_d,
-            segs_z=segs_z,
-            thickness=thickness,
-            invert=invert,
-            open_back=False if corner_radius <= 0 else True,
-            open_front=False if corner_radius <= 0 else True,
-            open_left=False,
-            open_right=False,
-            open_top=True if thickness > 0 else open_top,
-            open_bottom=True if thickness > 0 else open_bottom
-        )
+        self.color = (1, 1, 1, 1)
+        self.center = Point3(0, 0, 0)
+        self.width = width
+        self.depth = depth
+        self.height = height
+        self.segs_w = segs_w
+        self.segs_d = segs_d
+        self.segs_z = segs_z
+        self.thickness = thickness
+        self.open_back = False if corner_radius <= 0 else True
+        self.open_front = False if corner_radius <= 0 else True
+        self.open_left = False
+        self.open_right = False
+        self.open_top = True if thickness > 0 else open_top
+        self.open_bottom = True if thickness > 0 else open_bottom
+        self.invert = invert
 
         self.c_radius = corner_radius
         self.rf_left = rounded_f_left
@@ -195,6 +196,8 @@ class RoundedCornerBox(BasicRoundedBox, ProceduralGeometry):
         return vertex_cnt
 
     def define_variables(self):
+        super().define_variables()
+
         if self.thickness > 0 and self.c_radius > 0:
             self.thickness = min(self.c_radius, self.thickness)
 
@@ -203,23 +206,8 @@ class RoundedCornerBox(BasicRoundedBox, ProceduralGeometry):
         self._width = self.width - self.c_radius * 2
         self.dims = (self.width, self._depth, self.height)
 
-        self.segs = {'x': self.segs_w, 'y': self.segs_d, 'z': self.segs_z}
-
-        self.open_sides = {
-            '-yz': self.open_left,
-            'yz': self.open_right,
-            '-zx': self.open_back,
-            'zx': self.open_front,
-            '-xy': self.open_bottom,
-            'xy': self.open_top
-        }
-
         if self.thickness > 0:
-            outer_box_details = [
-                ['x', self._width, self.open_left, self.open_right],
-                ['y', self._depth, self.open_back, self.open_front],
-                ['z', self.height, self.open_bottom, self.open_top]
-            ]
+            outer_box_details = self.get_outer_details(self._width, self._depth, self.height)
             self.define_inner_details(outer_box_details)
 
         # Variables for the corner cylinders.
@@ -228,9 +216,21 @@ class RoundedCornerBox(BasicRoundedBox, ProceduralGeometry):
         self.c_segs_bc = 0 if self.thickness <= 0 and self.open_bottom else self.segs_d
 
     def get_geom_node(self):
-        # If c_radius is 0, Box.get_geom_node is called, creating a cube.
+        # If c_radius is 0, call Box.get_geom_node, creating a cube.
         if self.c_radius == 0:
-            return super().get_geom_node()
+            box = Box(
+                width=self.width,
+                depth=self.width,
+                height=self.height,
+                segs_w=self.segs_w,
+                segs_d=self.segs_d,
+                segs_z=self.segs_z,
+                thickness=self.thickness,
+                open_top=self.open_top,
+                open_bottom=self.open_bottom,
+                invert=False
+            )
+            return box.get_geom_node()
 
         self.define_variables()
 

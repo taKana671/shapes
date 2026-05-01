@@ -11,6 +11,10 @@ class Dodecahedron(ConvexPolyhedron):
             scale (float): the size of sphere; greater than 0.
     """
 
+    def __init__(self, max_depth=4, scale=2):
+        super().__init__(max_depth, scale)
+        self.color = (1, 1, 1, 1)
+
     def generate_triangles(self):
         pts = [
             [-0.35682209, -0.49112347, 0.79465447],
