@@ -190,30 +190,12 @@ class BasicSphere(SphereGeometry, SphereCapGeometry):
 
         return vertex_cnt
 
-
-class SphereVariables:
-    """A class that provides functionality for calculating variables to create a sphere model
-    """
-
     def define_variables(self):
-        self.top_height = self.radius * self.top_clip
-        self.bottom_height = self.radius * self.bottom_clip
-        self.thickness = self.radius - self.inner_radius
-
-        if self.inner_radius:
-            if (self.top_height - self.bottom_height) * 0.5 <= self.thickness:
-                self.inner_radius = 0
-
         self.slice_rad = math.pi * self.slice_deg / 180.
         self.delta_angle_h = math.pi * ((360 - self.slice_deg) / 180) / self.segs_h
 
-        # Use np.clip to prevent ValueError: math domain error raised from math.acos.
-        self.bottom_angle = math.pi - math.acos(np.clip(self.bottom_height / self.radius, -1.0, 1.0))
-        self.top_angle = math.acos(np.clip(self.top_height / self.radius, -1.0, 1.0))
-        self.delta_angle_v = (math.pi - self.bottom_angle - self.top_angle) / self.segs_v
 
-
-class Sphere(SphereVariables, BasicSphere, ProceduralGeometry):
+class Sphere(BasicSphere, ProceduralGeometry):
     """A class to create a sphere.
 
         Args:
@@ -255,6 +237,22 @@ class Sphere(SphereVariables, BasicSphere, ProceduralGeometry):
         self.bottom_clip = bottom_clip
         self.slice_deg = slice_deg
         self.invert = invert
+
+    def define_variables(self):
+        super().define_variables()
+
+        self.top_height = self.radius * self.top_clip
+        self.bottom_height = self.radius * self.bottom_clip
+        self.thickness = self.radius - self.inner_radius
+
+        if self.inner_radius:
+            if (self.top_height - self.bottom_height) * 0.5 <= self.thickness:
+                self.inner_radius = 0
+
+        # Use np.clip to prevent ValueError: math domain error raised from math.acos.
+        self.bottom_angle = math.pi - math.acos(np.clip(self.bottom_height / self.radius, -1.0, 1.0))
+        self.top_angle = math.acos(np.clip(self.top_height / self.radius, -1.0, 1.0))
+        self.delta_angle_v = (math.pi - self.bottom_angle - self.top_angle) / self.segs_v
 
     def get_cap_triangle_vertices(self, vdata_values, cap):
         """Helper method to define the triangle vertices of a bottom or top cap.

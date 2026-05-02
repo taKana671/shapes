@@ -469,13 +469,12 @@ class Ellipsoid(BasicSphere, ProceduralGeometry):
                 self.semi_inner_minor = self.inner_minor / 2
 
     def define_variables(self):
+        super().define_variables()
+
         self.semi_minor_axis = self.minor_axis / 2
         self.semi_major_axis = self.major_axis / 2
         self.top_height = self.semi_minor_axis * self.top_clip
         self.bottom_height = self.semi_minor_axis * self.bottom_clip
-
-        self.slice_rad = math.pi * self.slice_deg / 180.
-        self.delta_angle_h = math.pi * ((360 - self.slice_deg) / 180) / self.segs_h
 
         # Use np.clip to prevent math domain error raised from math.acos.
         self.bottom_angle = math.pi - math.acos(np.clip(self.bottom_height / self.semi_minor_axis, -1.0, 1.0))
