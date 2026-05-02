@@ -138,6 +138,9 @@ classDiagram
 
 ```mermaid
 classDiagram
+  class _ProceduralGeometry_{
+    <<abstract>>
+  }
 
   namespace sphere{
 
@@ -235,7 +238,10 @@ classDiagram
 
 ```mermaid
 classDiagram
-  direction TB
+
+  class _ProceduralGeometry_{
+    <<abstract>>
+  }
 
   namespace box {
     class BasicBox{
@@ -328,6 +334,10 @@ classDiagram
 
 ```mermaid
 classDiagram
+
+  class _ProceduralGeometry_{
+    <<abstract>>
+  }
  
   namespace polyhedron{
     class TriangleGenerator {
@@ -419,6 +429,10 @@ classDiagram
 
 ```mermaid
 classDiagram
+
+  class _ProceduralGeometry_{
+    <<abstract>>
+  }
   
   namespace shapes {
     class Cone {
