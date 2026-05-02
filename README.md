@@ -351,7 +351,6 @@ classDiagram
       +\_\_init\_\_()
       +*generate_triangles*()
       +*create_polyhedron*()
-      +\_\_init\_\_()
       +generate_divided_tri()
       +create_polyhedron_geom_node()
     }
