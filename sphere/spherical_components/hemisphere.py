@@ -1,13 +1,28 @@
+import math
 from types import SimpleNamespace
 
+import numpy as np
 from panda3d.core import Vec3, Point3
 
-from ..sphere import SphereVariables, SphereGeometry
+from ..sphere import SphereGeometry
 
 
-class BasicHemisphere(SphereVariables, SphereGeometry):
+class BasicHemisphere(SphereGeometry):
     """A class that provides functionality for creating a hemisphere model
     """
+
+    def define_variables(self):
+        self.top_height = self.radius * self.top_clip
+        self.bottom_height = self.radius * self.bottom_clip
+        self.thickness = self.radius - self.inner_radius
+
+        self.slice_rad = math.pi * self.slice_deg / 180.
+        self.delta_angle_h = math.pi * ((360 - self.slice_deg) / 180) / self.segs_h
+
+        # Use np.clip to prevent ValueError: math domain error raised from math.acos.
+        self.bottom_angle = math.pi - math.acos(np.clip(self.bottom_height / self.radius, -1.0, 1.0))
+        self.top_angle = math.acos(np.clip(self.top_height / self.radius, -1.0, 1.0))
+        self.delta_angle_v = (math.pi - self.bottom_angle - self.top_angle) / self.segs_v
 
     def create_bottom(self, index_offset, vdata_values, prim_indices):
         cap = SimpleNamespace(
