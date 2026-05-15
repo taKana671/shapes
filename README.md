@@ -1,13 +1,19 @@
-# shapes
+# 3D shapes
 
 Provides the modules to procedurally generate 3D shape models, which can be used when programming 3D games by panda3D.
 In addition to generating basic 3D shapes, you can create many variations by changing parameters.
 For example, you can make them hollow inside or cut them like a pie.
 Currently, the following 3D shapes can be created, but I plan to add more in the future. 
 A model editor [3DModelEditor](https://github.com/taKana671/3DModelEditor) allows you to create a 3D model while seeing how the shape changes as you change the parameters.  
-And this repositroy is also a submodule for
+And this repositroy is also the submodule for
+
 * https://github.com/taKana671/VoronoiCity
+* https://github.com/taKana671/VoronoiCity2
+* https://github.com/taKana671/TerracedTerrainModel
+* https://github.com/taKana671/Clipped3DVoronoi
 * https://github.com/taKana671/DeliveryCart
+
+<br>
 
 ![Image](https://github.com/user-attachments/assets/b4db70b2-81be-4556-b81d-2f1c36a9ffde)
 ![Image](https://github.com/user-attachments/assets/40ca644a-a478-467d-9f72-1ca3e32b4fc2)
@@ -357,11 +363,16 @@ classDiagram
   }  
 
   namespace spherical-polyhedron {
-    
-    class SphericalPolyhedron {
-      <<abstract mixin>>
+
+    class SphericalVertexData {
+      <<mixin>>
       +calc_uv()
       +fix_uv()
+    }
+
+    class SphericalPolyhedron {
+      <<abstract mixin>>
+      +get_uv_coords()
       +create_polyhedron()
     }
 
@@ -379,11 +390,28 @@ classDiagram
   }
 
   namespace convex-polyhedron{
-    class ConvexPolyhedron {
-      <<abstract mixin>>
+
+
+    class PolyhedralVertexData {
+      <<mixin>>
       +calc_normal_newell()
       +calc_average_normal()
+      +cross()
+      +calc_triangle_area()
+      +calc_outward_normal()
       +project_to_uv()
+    }
+    class RandomPolygonalPrism {
+      +\_\_init\_\_()
+      +create_cap_triangles()
+      +create_cap_quad_vertices()
+      +create_mantle_quad_vertices()
+      +calc_perimeter()
+      +get_geom_node()
+    }
+
+    class ConvexPolyhedron {
+      <<abstract mixin>>
       +create_polyhedron()
     }
 
@@ -399,29 +427,43 @@ classDiagram
       +get_geom_node()
     }
 
-    class RandomPolygonalPrism {
+  }
+
+  namespace composite-solid {
+
+    class ShatteredSphere {
       +\_\_init\_\_()
-      +create_cap_triangles()
-      +create_cap_quad_vertices()
-      +create_mantle_quad_vertices()
-      +calc_perimeter()
+      +define_variables()
+      +is_inside()
+      +calc_convex_uv()
+      +get_uv_coords()
+      +normalize()
+      +create_polyhedron()
+      +generate_triangles()
       +get_geom_node()
     }
   }
 
-  _ProceduralGeometry_ <|-- _Polyhedron_
   TriangleGenerator <|-- _Polyhedron_
+  _ProceduralGeometry_ <|-- _Polyhedron_
 
+  SphericalVertexData <|-- ShatteredSphere
+  PolyhedralVertexData <|-- ShatteredSphere
+  _Polyhedron_ <|-- ShatteredSphere
+
+  SphericalVertexData <|-- SphericalPolyhedron
   _Polyhedron_ <|-- SphericalPolyhedron
   SphericalPolyhedron <|-- Cubesphere
   SphericalPolyhedron <|-- Icosphere
 
   _Polyhedron_ <|-- ConvexPolyhedron
+  PolyhedralVertexData <|-- ConvexPolyhedron
   ConvexPolyhedron <|-- RandomConvexPolyhedron
   ConvexPolyhedron <|-- Dodecahedron
 
   _ProceduralGeometry_ <|-- RandomPolygonalPrism
   CylinderGeometry <|-- RandomPolygonalPrism
+
 ```
 
 ## Other Shapes

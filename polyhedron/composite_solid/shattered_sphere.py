@@ -1,6 +1,8 @@
 import numpy as np
 import math
 
+from functools import lru_cache
+
 from ..polyhedron import Polyhedron
 from ..spherical_polyhedron.spherical_polyhedron import SphericalVertexData
 from ..convex_polyhedron.convex_polyhedron import PolyhedralVertexData
@@ -46,13 +48,21 @@ class ShatteredSphere(SphericalVertexData, PolyhedralVertexData, Polyhedron):
                 area = self.calc_triangle_area(*tri)
                 self.spherical_tri_areas.append((tri, area))
 
-    def is_inside(self, pt, tolerance=1e-5):
+    @lru_cache(maxsize=256)
+    def is_inside(self, vert, tolerance=1e-5):
+        """Check whether the vertex lies within the face
+           that is being transformed into a spherical face.
+        """
         for tri, area_master in self.spherical_tri_areas:
             area_target = sum(self.calc_triangle_area(
-                pt, tri[i], tri[(i + 1) % 3]) for i in range(3))
+                vert, tri[i], tri[(i + 1) % 3]) for i in range(3))
 
             if abs(area_target - area_master) < tolerance:
                 return True
+
+    @lru_cache(maxsize=256)
+    def calc_convex_uv(self, vert, normal):
+        return self.project_to_uv(vert, normal)
 
     def get_uv_coords(self, tri_vertices):
         uvs = [self.calc_uv(Point3(*self.normalize(vert))) for vert in tri_vertices]
@@ -69,7 +79,7 @@ class ShatteredSphere(SphericalVertexData, PolyhedralVertexData, Polyhedron):
             sphere_uv = None
 
             for j, vert in enumerate(tri):
-                if len(self.spherical_polygon) > 0 and self.is_inside(vert):
+                if len(self.spherical_polygon) > 0 and self.is_inside(tuple(vert)):
                     vert = self.normalize(vert)
                     normal = vert if self.is_spherical else self.normal
 
@@ -78,7 +88,7 @@ class ShatteredSphere(SphericalVertexData, PolyhedralVertexData, Polyhedron):
                     uv = sphere_uv[j]
                 else:
                     normal = self.normal
-                    uv = self.project_to_uv(vert, self.normal)
+                    uv = self.calc_convex_uv(tuple(vert), tuple(self.normal))
 
                 vertex = (vert - self.polyhedron_org_center) * self.scale
                 vdata_values.extend([*vertex, *self.color, *normal, *uv])
