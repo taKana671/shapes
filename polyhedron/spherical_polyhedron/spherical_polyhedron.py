@@ -4,8 +4,8 @@ from panda3d.core import Point2
 from ..polyhedron import Polyhedron
 
 
-class SphericalPolyhedron(Polyhedron):
-    """A class that provides common methods for creating spheres from 3D polyhedrons
+class SphericalVertexData:
+    """A mixin class for calculating the UV coordinates of a sphere
     """
 
     def calc_uv(self, vert):
@@ -42,12 +42,22 @@ class SphericalPolyhedron(Polyhedron):
         if uv_c.y == 0 or uv_c.y == 1:
             uv_c.x = (uv_a.x + uv_b.x) / 2
 
+
+class SphericalPolyhedron(SphericalVertexData, Polyhedron):
+    """A class that provides common methods for creating spheres from 3D polyhedrons
+    """
+
+    def get_uv_coords(self, tri_vertices):
+        uvs = [self.calc_uv(vert.normalized()) for vert in tri_vertices]
+        self.fix_uv(*uvs)
+
+        return uvs
+
     def create_polyhedron(self, vdata_values, prim_indices):
         """Subdivide a triangle and normalize the vertex position vectors.
         """
         for i, tri in enumerate(self.generate_divided_tri()):
-            uvs = [self.calc_uv(vert.normalized()) for vert in tri]
-            self.fix_uv(*uvs)
+            uvs = self.get_uv_coords(tri)
 
             for vert, uv in zip(tri, uvs):
                 normal = vert.normalized()
