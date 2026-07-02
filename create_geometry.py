@@ -2,15 +2,22 @@ from abc import ABC, abstractmethod
 
 from panda3d.core import NodePath
 from panda3d.core import Geom, GeomNode, GeomTriangles
+from panda3d.core import GeomEnums, GeomPoints
 from panda3d.core import Mat4, Vec3
-from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexArrayFormat
+from panda3d.core import GeomVertexData
+from panda3d.core import GeomVertexFormat, GeomVertexArrayFormat
 
 
-class ProceduralGeometry(ABC):
+class AbstractGeometry(ABC):
 
     @abstractmethod
-    def get_geom_node(self, vertex_count, vdata_values, prim_indices):
+    def get_geom_node(self):
+        """Must return GeomNode.
+        """
         pass
+
+
+class ProceduralGeometry(AbstractGeometry):
 
     def create(self):
         geom_node = self.get_geom_node()
@@ -122,3 +129,28 @@ class ProceduralGeometry(ABC):
         new_prim_array = new_prim.modify_vertices()
         new_prim_mem = memoryview(new_prim_array).cast('B').cast('H')
         self.add(main_geom_nd, new_vdata_mem, new_vert_cnt, new_prim_mem)
+
+
+class ProceduralPoints(AbstractGeometry):
+
+    def create(self):
+        geom_node = self.get_geom_node()
+        model = NodePath(geom_node)
+        return model
+
+    def create_geom_node(self, vertex_count, vdata_values, name='points'):
+        fmt = GeomVertexFormat.get_v3()
+        vdata = GeomVertexData(name, fmt, Geom.UH_static)
+        vdata.unclean_set_num_rows(vertex_count)
+        vdata_mem = memoryview(vdata.modify_array(0)).cast('B').cast('f')
+        vdata_mem[:] = vdata_values
+
+        prim = GeomPoints(GeomEnums.UH_static)
+        prim.add_next_vertices(vertex_count)
+
+        geom = Geom(vdata)
+        geom.add_primitive(prim)
+        geom_node = GeomNode('geomnode')
+        geom_node.add_geom(geom)
+
+        return geom_node
