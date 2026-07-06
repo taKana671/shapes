@@ -11,3 +11,4 @@ from .rounded_box import CapsulePrism, RoundedCornerBox, RoundedEdgeBox
 from .ellipsoid import Ellipsoid
 from .polyhedron import Icosphere, Cubesphere
 from .polyhedron import RandomPolygonalPrism, RandomConvexPolyhedron, Dodecahedron, ShatteredSphere
+from .particles import Particles
