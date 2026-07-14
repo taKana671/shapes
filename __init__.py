@@ -1,5 +1,5 @@
 from .cylinder import Cylinder
-from .plane import Plane
+from .plane import Plane, PlaneForTextureAtlas
 from .box import Box
 from .sphere import Sphere
 from .torus import Torus

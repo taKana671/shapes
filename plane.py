@@ -57,3 +57,59 @@ class Plane(ProceduralGeometry):
             vertex_cnt, vdata_values, prim_indices, self.__class__.__name__.lower())
 
         return geom_node
+
+
+class PlaneForTextureAtlas(ProceduralGeometry):
+    """A class to create a plane for texture atlas.
+
+        Args:
+            divided_u (float):
+                A value indicating how many small images of the same size fit horizontally within a single image.
+                If a single image contains 8 (vertical) x 8 (horizontal) small images, then 1/8.
+            divided_v (float):
+                A value indicating how many small images of the same size fit vertically within a single image.
+                If a single image contains 8 (vertical) x 8 (horizontal) small images, then 1/8.
+            size (float): image size
+    """
+
+    def __init__(self, divided_u, divides_v, size=1):
+        self.color = (1, 1, 1, 1)
+        self.end_u = divided_u
+        self.start_v = 1 - divides_v
+        self.size = size
+
+    def get_geom_node(self):
+        vdata_values = array.array('f', [])
+        prim_indices = array.array('H', [])
+
+        half = self.size / 2
+        vertices = [
+            (-half, 0, half),
+            (-half, 0, -half),
+            (half, 0, half),
+            (half, 0, -half),
+        ]
+
+        # order is important
+        uvs = [
+            (0, 1),
+            (0, self.start_v),
+            (self.end_u, 1),
+            (self.end_u, self.start_v),
+        ]
+
+        for i, (vertex, uv) in enumerate(zip(vertices, uvs)):
+            vdata_values.extend(vertex)
+            vdata_values.extend(self.color)
+            vdata_values.extend(Vec3(vertex).normalized())
+            vdata_values.extend(uv)
+
+        idx = 2
+        prim_indices.extend((idx, idx - 2, idx - 1))
+        prim_indices.extend((idx, idx - 1, idx + 1))
+
+        vertex_cnt = len(vertices)
+        geom_node = self.create_geom_node(
+            vertex_cnt, vdata_values, prim_indices, self.__class__.__name__.lower())
+
+        return geom_node
