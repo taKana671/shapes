@@ -12,6 +12,7 @@ And this repositroy is also the submodule for
 * https://github.com/taKana671/TerracedTerrainModel
 * https://github.com/taKana671/Clipped3DVoronoi
 * https://github.com/taKana671/DeliveryCart
+* https://github.com/taKana671/VirtualPlanets
 
 <br>
 
@@ -60,10 +61,13 @@ model = box_maker.create()
 
 ```mermaid
 classDiagram
-
-  class _ProceduralGeometry_{
+  class _AbstractGeometry_{
     <<abstract>>
+    +*create*()
     +*get_geom_node*()
+  }
+
+  class ProceduralGeometry{
     +create()
     +create_format()
     +get_stride()
@@ -126,10 +130,12 @@ classDiagram
     }
   }
 
+  _AbstractGeometry_ <|-- ProceduralGeometry 
+
   CylinderSliceCapGeometry <|-- BasicCylinder
   CylinderGeometry <|-- BasicCylinder
   CylinderGeometry <|-- VerticalRoundedEdge
-  _ProceduralGeometry_ <|-- Cylinder
+  ProceduralGeometry <|-- Cylinder
   BasicCylinder <|-- Cylinder
   BasicCylinder <|-- HorizontalRoundedEdge
   BasicCylinder <|-- Capsule
@@ -144,8 +150,8 @@ classDiagram
 
 ```mermaid
 classDiagram
-  class _ProceduralGeometry_{
-    <<abstract>>
+  class ProceduralGeometry{
+
   }
 
   namespace sphere{
@@ -226,7 +232,7 @@ classDiagram
 
   SphereCapGeometry <|--  BasicSphere
   SphereGeometry <|--  BasicSphere
-  _ProceduralGeometry_ <|-- Sphere
+  ProceduralGeometry <|-- Sphere
   BasicSphere <|-- Sphere
   BasicSphere <|-- Ellipsoid
 
@@ -244,9 +250,8 @@ classDiagram
 
 ```mermaid
 classDiagram
+  class ProceduralGeometry{
 
-  class _ProceduralGeometry_{
-    <<abstract>>
   }
 
   namespace box {
@@ -320,18 +325,18 @@ classDiagram
   BasicRoundedBox ..> HorizontalRoundedEdge : create and use
   BasicRoundedBox ..> QuarteredHemisphereCorner : create and use
 
-  _ProceduralGeometry_ <|-- RoundedCornerBox
+  ProceduralGeometry <|-- RoundedCornerBox
   BasicRoundedBox <|-- RoundedCornerBox
   RoundedCornerBox ..> Box : create and use
 
-  _ProceduralGeometry_ <|-- RoundedEdgeBox
+  ProceduralGeometry <|-- RoundedEdgeBox
   BasicRoundedBox <|-- RoundedEdgeBox
   RoundedEdgeBox ..> Box : create and use
 
-  _ProceduralGeometry_ <|-- CapsulePrism
+  ProceduralGeometry <|-- CapsulePrism
   BasicRoundedBox <|-- CapsulePrism
 
-  _ProceduralGeometry_ <|-- Box
+  ProceduralGeometry <|-- Box
   BasicBox <|-- Box
 
 ```
@@ -341,8 +346,8 @@ classDiagram
 ```mermaid
 classDiagram
 
-  class _ProceduralGeometry_{
-    <<abstract>>
+  class ProceduralGeometry{
+
   }
  
   namespace polyhedron{
@@ -445,7 +450,7 @@ classDiagram
   }
 
   TriangleGenerator <|-- _Polyhedron_
-  _ProceduralGeometry_ <|-- _Polyhedron_
+  ProceduralGeometry <|-- _Polyhedron_
 
   SphericalVertexData <|-- ShatteredSphere
   PolyhedralVertexData <|-- ShatteredSphere
@@ -461,18 +466,42 @@ classDiagram
   ConvexPolyhedron <|-- RandomConvexPolyhedron
   ConvexPolyhedron <|-- Dodecahedron
 
-  _ProceduralGeometry_ <|-- RandomPolygonalPrism
+  ProceduralGeometry <|-- RandomPolygonalPrism
   CylinderGeometry <|-- RandomPolygonalPrism
 
+```
+
+## Plane
+
+```mermaid
+classDiagram
+  class ProceduralGeometry{
+
+  }
+  
+  namespace plane {
+    class Plane {
+      +\_\_init\_\_()
+      +get_geom_node()
+    }
+
+    class PlaneForTextureAtlas {
+      +\_\_init\_\_()
+      +get_geom_node()
+    }
+  }
+
+  ProceduralGeometry <|-- Plane
+  ProceduralGeometry <|-- PlaneForTextureAtlas
+  
 ```
 
 ## Other Shapes
 
 ```mermaid
 classDiagram
+  class ProceduralGeometry{
 
-  class _ProceduralGeometry_{
-    <<abstract>>
   }
   
   namespace shapes {
@@ -508,11 +537,6 @@ classDiagram
       +create_slice_cap_quads()
       +calc_radius()
       +define_variables()
-      +get_geom_node()
-    }
-
-    class Plane {
-      +\_\_init\_\_()
       +get_geom_node()
     }
 
@@ -559,17 +583,43 @@ classDiagram
   }
   
   BasicCylinder <|-- Capsule
-  _ProceduralGeometry_ <|-- Capsule
+  ProceduralGeometry <|-- Capsule
   Capsule ..> CapsuleHemisphere : create and use
 
-  _ProceduralGeometry_ <|-- Ellipsoid
+  ProceduralGeometry <|-- Ellipsoid
   BasicSphere <|-- Ellipsoid
 
-  _ProceduralGeometry_ <|-- Cone
-  _ProceduralGeometry_ <|-- EllipticalPrism
-  _ProceduralGeometry_ <|-- Plane
-  _ProceduralGeometry_ <|-- Torus
-  _ProceduralGeometry_ <|-- RightTriangularPrism
+  ProceduralGeometry <|-- Cone
+  ProceduralGeometry <|-- EllipticalPrism
+  ProceduralGeometry <|-- Torus
+  ProceduralGeometry <|-- RightTriangularPrism
   
 ```
+
+## Particles
+
+```mermaid
+classDiagram
+  class _AbstractGeometry_{
+    <<abstract>>
+    +*create*()
+    +*get_geom_node*()
+  }
+
+  class ProceduralPoints{
+    +create()
+    +create_geom_node()
+  }
+  
+  namespace particles {
+    class Particles {
+      +\_\_init\_\_()
+      *get_geom_node()
+    }
+  }
+
+  _AbstractGeometry_  <|-- ProceduralPoints 
+  ProceduralPoints <|-- Particles   
+```
+
 

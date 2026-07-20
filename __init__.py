@@ -1,5 +1,5 @@
 from .cylinder import Cylinder
-from .plane import Plane
+from .plane import Plane, PlaneForTextureAtlas
 from .box import Box
 from .sphere import Sphere
 from .torus import Torus
@@ -11,3 +11,4 @@ from .rounded_box import CapsulePrism, RoundedCornerBox, RoundedEdgeBox
 from .ellipsoid import Ellipsoid
 from .polyhedron import Icosphere, Cubesphere
 from .polyhedron import RandomPolygonalPrism, RandomConvexPolyhedron, Dodecahedron, ShatteredSphere
+from .particles import Particles
