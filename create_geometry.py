@@ -11,6 +11,12 @@ from panda3d.core import GeomVertexFormat, GeomVertexArrayFormat
 class AbstractGeometry(ABC):
 
     @abstractmethod
+    def create(self):
+        """Must return a NodePath created using GeomNode.
+        """
+        pass
+
+    @abstractmethod
     def get_geom_node(self):
         """Must return GeomNode.
         """
