@@ -8,7 +8,7 @@ from ...create_geometry import ProceduralGeometry
 from ...cylinder import CylinderGeometry
 
 
-class RandomPolygonalPrism(CylinderGeometry, ProceduralGeometry):    
+class RandomPolygonalPrism(CylinderGeometry, ProceduralGeometry):
     """A class to create a prism from 3D vertex coordinates of a polygonal base with height 0.
 
         Args:
@@ -136,7 +136,7 @@ class RandomPolygonalPrism(CylinderGeometry, ProceduralGeometry):
     def get_geom_node(self):
         # Create an outer cylinder.
         vdata_values = array.array('f', [])
-        prim_indices = array.array('H', [])
+        prim_indices = array.array('I', [])
         vertex_cnt = 0
         vertex_cnt = self.create_cylinder(vertex_cnt, vdata_values, prim_indices)
 
