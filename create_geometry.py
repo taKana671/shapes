@@ -120,7 +120,10 @@ class ProceduralGeometry(AbstractGeometry):
         new_prim_cnt = old_prim_cnt + len(add_prim)
         prim_array = prim.modify_vertices()
         prim_array.set_num_rows(new_prim_cnt)
-        prim_mem = memoryview(prim_array).cast('B').cast('H')
+
+        type_code = add_prim.typecode
+        prim_mem = memoryview(prim_array).cast('B').cast(type_code)
+
         prim_mem[old_prim_cnt:] = add_prim
         prim.offset_vertices(old_vert_cnt, old_prim_cnt, new_prim_cnt)
 
